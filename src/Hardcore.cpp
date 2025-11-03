@@ -396,15 +396,15 @@ public:
         if (killed->GetLevel() >= sHardcore->hardcoreMinDeathAnnounceLvl)
         {
             std::string killerName = killer ? killer->GetName() : "неизвестный враг";
-            std::string deathAnnouncement = "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                           "|cffFFFF00[Сервер]|r |cffFF0000☠ СМЕРТЬ ☠|r\n"
+            std::string deathAnnouncement = "|cffFFFF00==========================================|r\n"
+                                           "|cffFFFF00[Сервер]|r |cffFF0000СМЕРТЬ В ХАРДКОРЕ|r\n"
                                            "|cffFF0000" + killed->GetName() + "|r (ур. " + std::to_string(killed->GetLevel()) + ") пал в бою с |cff00FFFF" + killerName + "|r!\n"
-                                           "|cffFF8800Режим «Без права на ошибку»: последнее путешествие завершено.|r\n"
-                                           "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                           "|cffFF8800Режим Без права на ошибку: последнее путешествие завершено.|r\n"
+                                           "|cffFFFF00==========================================|r";
             ChatHandler(nullptr).SendWorldText(deathAnnouncement.c_str());
             
             // Глобальное оповещение на экране
-            const std::string screenNotification = "☠ " + killed->GetName() + " (ур. " + std::to_string(killed->GetLevel()) + ") погиб в режиме ХАРДКОР! ☠";
+            const std::string screenNotification = killed->GetName() + " (ур. " + std::to_string(killed->GetLevel()) + ") погиб в режиме ХАРДКОР!";
             sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -456,15 +456,15 @@ public:
         if (killed->GetLevel() >= sHardcore->hardcoreMinDeathAnnounceLvl)
         {
             std::string killerName = killer ? killer->GetName() : "неизвестное существо";
-            std::string deathAnnouncement = "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                           "|cffFFFF00[Сервер]|r |cffFF0000☠ СМЕРТЬ ☠|r\n"
+            std::string deathAnnouncement = "|cffFFFF00==========================================|r\n"
+                                           "|cffFFFF00[Сервер]|r |cffFF0000СМЕРТЬ В ХАРДКОРЕ|r\n"
                                            "|cffFF0000" + killed->GetName() + "|r (ур. " + std::to_string(killed->GetLevel()) + ") пал от |cffFF8800" + killerName + "|r!\n"
-                                           "|cffFF8800Режим «Без права на ошибку»: приключение окончено.|r\n"
-                                           "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                           "|cffFF8800Режим Без права на ошибку: приключение окончено.|r\n"
+                                           "|cffFFFF00==========================================|r";
             ChatHandler(nullptr).SendWorldText(deathAnnouncement.c_str());
             
             // Глобальное оповещение на экране
-            const std::string screenNotification = "☠ " + killed->GetName() + " (ур. " + std::to_string(killed->GetLevel()) + ") погиб в режиме ХАРДКОР! ☠";
+            const std::string screenNotification = killed->GetName() + " (ур. " + std::to_string(killed->GetLevel()) + ") погиб в режиме ХАРДКОР!";
             sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -551,16 +551,16 @@ public:
         if (level % 5 == 0 && level >= 5)
         {
             // Сообщение в чат (глобальное)
-            std::string levelAnnouncement = "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                           "|cffFFFF00[Сервер]|r |cff00FF00⚔ ПРОГРЕСС ⚔|r\n"
+            std::string levelAnnouncement = "|cffFFFF00==========================================|r\n"
+                                           "|cffFFFF00[Сервер]|r |cff00FF00ПРОГРЕСС В ХАРДКОРЕ|r\n"
                                            "|cff00FF00" + player->GetName() + "|r достиг |cffFFFF00" + std::to_string(level) + " уровня|r\n"
-                                           "в режиме |cffFF0000«Без права на ошибку»|r!\n"
+                                           "в режиме |cffFF0000Без права на ошибку|r!\n"
                                            "|cffFF8800Путь продолжается...|r\n"
-                                           "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                           "|cffFFFF00==========================================|r";
             ChatHandler(nullptr).SendWorldText(levelAnnouncement.c_str());
             
             // Глобальное оповещение на экране
-            std::string screenNotification = "⚔ " + player->GetName() + " достиг " + std::to_string(level) + " уровня в режиме ХАРДКОР! ⚔";
+            std::string screenNotification = player->GetName() + " достиг " + std::to_string(level) + " уровня в режиме ХАРДКОР!";
             sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -590,16 +590,16 @@ public:
             ChatHandler(player->GetSession()).SendSysMessage("|cffFF8800Красная аура снята.|r");
             
             // Глобальное объявление о достижении безопасного уровня
-            std::string safetyAnnouncement = "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                            "|cffFFFF00[Сервер]|r |cff00FF00✓ РУБЕЖ ПРОЙДЕН ✓|r\n"
+            std::string safetyAnnouncement = "|cff00FF00==========================================|r\n"
+                                            "|cffFFFF00[Сервер]|r |cff00FF00РУБЕЖ ПРОЙДЕН|r\n"
                                             "|cff00FF00" + player->GetName() + "|r достиг |cffFFFF00" + std::to_string(level) + " уровня|r\n"
-                                            "в режиме |cffFF0000«Без права на ошибку»|r!\n"
+                                            "в режиме |cffFF0000Без права на ошибку|r!\n"
                                             "|cff00FF00Окончательная смерть больше не действует!|r\n"
-                                            "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                            "|cff00FF00==========================================|r";
             ChatHandler(nullptr).SendWorldText(safetyAnnouncement.c_str());
             
             // Экранное уведомление
-            std::string safetyScreenNotification = "✓ " + player->GetName() + " выжил до " + std::to_string(level) + " уровня в ХАРДКОРЕ! ✓";
+            std::string safetyScreenNotification = player->GetName() + " выжил до " + std::to_string(level) + " уровня в ХАРДКОРЕ!";
             sWorldSessionMgr->DoForAllOnlinePlayers([&safetyScreenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -682,21 +682,21 @@ public:
             ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Все ограничения сняты! Поздравляем!|r");
             
             // Глобальное оповещение о завершении испытания
-            std::string completionAnnouncement = "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                                "|cffFFD700║                                          ║|r\n"
-                                                "|cffFFD700║  |cffFF0000⚔⚔⚔|r |cff00FF00ЭПИЧЕСКАЯ ПОБЕДА|r |cffFF0000⚔⚔⚔|r  |cffFFD700║|r\n"
-                                                "|cffFFD700║                                          ║|r\n"
-                                                "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+            std::string completionAnnouncement = "|cffFFD700==============================================|r\n"
+                                                "|cffFFD700                                              |r\n"
+                                                "|cffFFD700        |cff00FF00ЭПИЧЕСКАЯ ПОБЕДА|r        |r\n"
+                                                "|cffFFD700                                              |r\n"
+                                                "|cffFFD700==============================================|r\n"
                                                 "|cffFFFF00Игрок|r |cff00FF00" + player->GetName() + "|r\n"
                                                 "достиг |cffFFD700" + std::to_string(level) + " уровня|r и успешно завершил\n"
-                                                "режим |cffFF0000«БЕЗ ПРАВА НА ОШИБКУ»|r!\n"
-                                                "|cff00FF00✦ Ни одной смерти! ✦|r\n"
+                                                "режим |cffFF0000БЕЗ ПРАВА НА ОШИБКУ|r!\n"
+                                                "|cff00FF00Ни одной смерти!|r\n"
                                                 "|cffFF8800Легенда сервера!|r\n"
-                                                "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                                "|cffFFD700==============================================|r";
             ChatHandler(nullptr).SendWorldText(completionAnnouncement.c_str());
             
             // Глобальное оповещение на экране
-            const std::string screenNotification = "✦✦✦ " + player->GetName() + " ЗАВЕРШИЛ ХАРДКОР-РЕЖИМ НА " + std::to_string(level) + " УРОВНЕ! ЛЕГЕНДА! ✦✦✦";
+            const std::string screenNotification = player->GetName() + " ЗАВЕРШИЛ ХАРДКОР-РЕЖИМ НА " + std::to_string(level) + " УРОВНЕ! ЛЕГЕНДА!";
             sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -778,9 +778,10 @@ public:
         sHardcore->TriggerOnActivate(player);
         
         // Сообщение игроку
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000║   РЕЖИМ ХАРДКОР АКТИВИРОВАН!        ║|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000╚══════════════════════════════════════╝|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000========================================|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000   РЕЖИМ ХАРДКОР АКТИВИРОВАН!|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000========================================|r");
+        ChatHandler(player->GetSession()).SendSysMessage(" ");
         ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
         ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
         ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
@@ -798,15 +799,15 @@ public:
         }
         
         // Глобальное оповещение (чат) - яркое и заметное
-        std::string announcement = "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+        std::string announcement = "|cffFFFF00==========================================|r\n"
                                   "|cffFFFF00[Сервер]|r Игрок |cff00FF00" + player->GetName() + "|r\n"
-                                  "принял испытание |cffFF0000⚔ ХАРДКОР ⚔|r!\n"
+                                  "принял испытание |cffFF0000ХАРДКОР|r!\n"
                                   "|cffFF8800Одна жизнь. Одна смерть. Одна судьба.|r\n"
-                                  "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+                                  "|cffFFFF00==========================================|r";
         ChatHandler(nullptr).SendWorldText(announcement.c_str());
 
         // Глобальное оповещение на экране - более эпичное
-        const std::string screenNotification = "⚔ " + player->GetName() + " начал испытание ХАРДКОР! ⚔";
+        const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
         sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
         {
             if (WorldSession* session = onlinePlayer->GetSession())

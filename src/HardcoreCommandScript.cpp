@@ -244,9 +244,9 @@ public:
             });
 
         // Выводим таблицу лидеров
-        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
-        handler->SendSysMessage("|cffFFD700║  🏆 ТАБЛИЦА ЛИДЕРОВ ХАРДКОР 🏆    ║|r");
-        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
+        handler->SendSysMessage("|cffFFD700==========================================|r");
+        handler->SendSysMessage("|cffFFD700    ТАБЛИЦА ЛИДЕРОВ ХАРДКОР|r");
+        handler->SendSysMessage("|cffFFD700==========================================|r");
         handler->SendSysMessage(" ");
 
         if (hardcorePlayers.empty())
@@ -283,13 +283,12 @@ public:
 
                 // Медали для топ-3
                 std::string medal;
-                if (count == 1) medal = "|cffFFD700🥇|r";
-                else if (count == 2) medal = "|cffC0C0C0🥈|r";
-                else if (count == 3) medal = "|cffCD7F32🥉|r";
-                else medal = "  ";
+                if (count == 1) medal = "|cffFFD700[1]|r";
+                else if (count == 2) medal = "|cffC0C0C0[2]|r";
+                else if (count == 3) medal = "|cffCD7F32[3]|r";
+                else medal = "[" + std::to_string(count) + "]";
 
-                std::string msg = medal + " " + std::to_string(count) + ". " + 
-                                 classColor + info.name + "|r |cffFFFF00(ур. " + 
+                std::string msg = medal + " " + classColor + info.name + "|r |cffFFFF00(ур. " + 
                                  std::to_string(info.level) + ")|r";
                 
                 handler->SendSysMessage(msg.c_str());
@@ -301,7 +300,7 @@ public:
         }
 
         handler->SendSysMessage(" ");
-        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
+        handler->SendSysMessage("|cffFFD700==========================================|r");
 
         return true;
     }
