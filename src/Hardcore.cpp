@@ -184,52 +184,36 @@ public:
 
     void OnLogin(Player* player)
     {
-        // Выдать предмет "Свиток испытания Хардкор" новым персонажам 1 уровня
+        // Показать приглашение к режиму хардкор новым персонажам 1 уровня
         if (!sHardcore->isHardcorePlayer(player) && player->GetLevel() == 1)
         {
-            LOG_INFO("module", "HARDCORE: Player {} is level 1 and not hardcore", player->GetName());
+            // Проверяем, не отказался ли игрок от испытания
+            uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value; // 10 = HARDCORE_DECLINED
             
-            // Проверяем, есть ли уже предмет
-            if (!player->HasItemCount(60000, 1))
+            if (declined == 0)
             {
-                LOG_INFO("module", "HARDCORE: Player {} doesn't have item 60000", player->GetName());
+                // Отправляем красивое приглашение
+                ChatHandler chatHandle = ChatHandler(player->GetSession());
                 
-                // Проверяем, не отказался ли игрок от испытания
-                uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value; // 10 = HARDCORE_DECLINED
-                LOG_INFO("module", "HARDCORE: Declined status for {}: {}", player->GetName(), declined);
-                
-                if (declined == 0)
-                {
-                    // Выдаём предмет
-                    ItemPosCountVec dest;
-                    uint32 itemEntry = 60000;
-                    uint32 count = 1;
-                    
-                    InventoryResult msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemEntry, count);
-                    LOG_INFO("module", "HARDCORE: CanStoreNewItem result: {}", uint32(msg));
-                    
-                    if (msg == EQUIP_ERR_OK)
-                    {
-                        Item* item = player->StoreNewItem(dest, itemEntry, true);
-                        if (item)
-                        {
-                            LOG_INFO("module", "HARDCORE: Item 60000 successfully given to {}", player->GetName());
-                            player->SendNewItem(item, count, true, false);
-                        }
-                        else
-                        {
-                            LOG_ERROR("module", "HARDCORE: Failed to create item 60000 for {}", player->GetName());
-                        }
-                    }
-                    else
-                    {
-                        LOG_ERROR("module", "HARDCORE: Cannot store item 60000 for {}, error: {}", player->GetName(), uint32(msg));
-                    }
-                }
-            }
-            else
-            {
-                LOG_INFO("module", "HARDCORE: Player {} already has item 60000", player->GetName());
+                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
+                chatHandle.SendSysMessage("|cffFFD700     РЕЖИМ ХАРДКОР ДОСТУПЕН!|r");
+                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
+                chatHandle.SendSysMessage(" ");
+                chatHandle.SendSysMessage("|cffFFFFFFДобро пожаловать, искатель приключений!|r");
+                chatHandle.SendSysMessage("|cffFF8800Вам доступен легендарный режим ХАРДКОР:|r");
+                chatHandle.SendSysMessage(" ");
+                chatHandle.SendSysMessage("|cffFF6347 * ОДНА ЖИЗНЬ - одна смерть = конец|r");
+                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ТОРГОВЛИ - запрещен аукцион|r");
+                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ГРУППЫ - только соло игра|r");
+                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ГИЛЬДИИ - путь одиночки|r");
+                chatHandle.SendSysMessage(" ");
+                chatHandle.SendSysMessage("|cff00FF00Для активации используйте:|r");
+                chatHandle.SendSysMessage("|cffFFFF00  .hardcore start|r - Начать испытание");
+                chatHandle.SendSysMessage("|cffFFFF00  .hardcore info|r  - Подробности");
+                chatHandle.SendSysMessage("|cffFFFF00  .hardcore decline|r - Отказаться");
+                chatHandle.SendSysMessage(" ");
+                chatHandle.SendSysMessage("|cffFF0000ВНИМАНИЕ: После активации отменить нельзя!|r");
+                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
             }
         }
         
