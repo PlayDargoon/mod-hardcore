@@ -19,8 +19,6 @@ public:
     {
         static ChatCommandTable hardcoreCommandTable =
         {
-            { "start",   HandleHardcoreStartCommand,   SEC_PLAYER, Console::No },
-            { "decline", HandleHardcoreDeclineCommand, SEC_PLAYER, Console::No },
             { "status",  HandleHardcoreStatusCommand,  SEC_PLAYER, Console::No },
             { "info",    HandleHardcoreInfoCommand,    SEC_PLAYER, Console::No },
             { "top",     HandleHardcoreTopCommand,     SEC_PLAYER, Console::No },
@@ -46,56 +44,7 @@ public:
         return true;
     }
 
-    static bool HandleHardcoreDeclineCommand(ChatHandler* handler)
-    {
-        Player* player = handler->GetSession()->GetPlayer();
-        if (!player)
-            return false;
 
-        if (!sHardcore->enabled())
-        {
-            handler->SendSysMessage("|cffFF0000Режим хардкор отключен на сервере.|r");
-            return true;
-        }
-
-        // Проверка: уже активирован хардкор?
-        if (sHardcore->isHardcorePlayer(player))
-        {
-            handler->SendSysMessage("|cffFF8800Вы уже активировали режим хардкор!|r");
-            handler->SendSysMessage("|cffFFFF00Отказаться невозможно - испытание принято.|r");
-            return true;
-        }
-
-        // Проверка: слишком высокий уровень?
-        if (player->GetLevel() > 1)
-        {
-            handler->SendSysMessage("|cffFF8800Вы уже прошли 1 уровень.|r");
-            handler->SendSysMessage("|cffFFFF00Свиток испытания больше не актуален.|r");
-            
-            // Удаляем предмет если есть
-            player->DestroyItemCount(60000, 1, true);
-            return true;
-        }
-
-        // Отказ от испытания
-        handler->SendSysMessage(" ");
-        handler->SendSysMessage("|cffFF0000========================================|r");
-        handler->SendSysMessage("|cffFF0000   ВЫ ОТКАЗАЛИСЬ ОТ ИСПЫТАНИЯ|r");
-        handler->SendSysMessage("|cffFF0000========================================|r");
-        handler->SendSysMessage(" ");
-        handler->SendSysMessage("|cffFFFF00Свиток испытания Хардкор удален.|r");
-        handler->SendSysMessage("|cffFFFF00Вы больше не сможете активировать этот режим.|r");
-        handler->SendSysMessage("|cff00FF00Удачи в обычных приключениях!|r");
-        handler->SendSysMessage(" ");
-
-        // Сохраняем отказ в настройках персонажа
-        player->UpdatePlayerSetting("mod-hardcore", 10, 1); // 10 = HARDCORE_DECLINED
-        
-        // Удаляем предмет
-        player->DestroyItemCount(60000, 1, true);
-
-        return true;
-    }
 
     static bool HandleHardcoreStatusCommand(ChatHandler* handler)
     {
@@ -271,104 +220,7 @@ public:
         return true;
     }
 
-    static bool HandleHardcoreStartCommand(ChatHandler* handler)
-    {
-        Player* player = handler->GetSession()->GetPlayer();
-        if (!player)
-            return false;
 
-        if (!sHardcore->enabled())
-        {
-            handler->SendSysMessage("|cffFF0000Режим хардкор отключен на сервере.|r");
-            return true;
-        }
-
-        // Проверка: уже активирован?
-        if (sHardcore->isHardcorePlayer(player))
-        {
-            handler->SendSysMessage("|cffFF8800Режим хардкор уже активирован для вашего персонажа!|r");
-            handler->SendSysMessage("|cffFFFF00Используйте .hardcore status для проверки статуса.|r");
-            return true;
-        }
-
-        // Проверка: только 1 уровень (или 55 для ДК)
-        uint8 requiredLevel = (player->getClass() == CLASS_DEATH_KNIGHT) ? 55 : 1;
-        if (player->GetLevel() != requiredLevel)
-        {
-            std::string msg = "|cffFF0000Слишком поздно! Хардкор можно активировать только на " + 
-                             std::to_string(requiredLevel) + " уровне!|r";
-            handler->SendSysMessage(msg.c_str());
-            handler->SendSysMessage("|cffFF8800Используйте 'Свиток испытания Хардкор' в инвентаре для активации.|r");
-            return true;
-        }
-
-        // Проверка: запрещённый класс?
-        if (sHardcore->hardcoreBlockDeathKnight && player->getClass() == CLASS_DEATH_KNIGHT)
-        {
-            handler->SendSysMessage("|cffFF0000Рыцари смерти не могут использовать хардкор-режим!|r");
-            return true;
-        }
-
-        // АКТИВАЦИЯ ХАРДКОРА
-        player->UpdatePlayerSetting("mod-hardcore", SETTING_HARDCORE, 1);
-        
-        // Применить красную ауру
-        uint32 spellId = sHardcore->hardcoreAuraSpellId;
-        if (spellId && !player->HasAura(spellId))
-        {
-            player->AddAura(spellId, player);
-        }
-
-        // ТРИГГЕР ХУКА: Активация хардкора
-        sHardcore->TriggerOnActivate(player);
-        
-        // Сообщение игроку
-        handler->SendSysMessage("|cffFF0000========================================|r");
-        handler->SendSysMessage("|cffFF0000   РЕЖИМ ХАРДКОР АКТИВИРОВАН!|r");
-        handler->SendSysMessage("|cffFF0000========================================|r");
-        handler->SendSysMessage(" ");
-        handler->SendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
-        handler->SendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
-        handler->SendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
-        
-        // Информация об ограничении уровня
-        if (sHardcore->hardcoreMaxDeathLevel > 0)
-        {
-            std::string maxDeathMsg = "|cffFF8800Окончательная смерть действует до " + 
-                                     std::to_string(sHardcore->hardcoreMaxDeathLevel) + " уровня.|r";
-            handler->SendSysMessage(maxDeathMsg.c_str());
-        }
-        if (sHardcore->hardcoreDisableLevel > 0)
-        {
-            std::string disableLevelMsg = "|cffFF8800Режим автоматически отключится на " + 
-                                         std::to_string(sHardcore->hardcoreDisableLevel) + " уровне.|r";
-            handler->SendSysMessage(disableLevelMsg.c_str());
-        }
-        
-        // Глобальное оповещение (чат)
-        std::string announcement = "|cffFFFF00==========================================|r\n"
-                                  "|cffFFFF00[Сервер]|r Игрок |cff00FF00" + player->GetName() + "|r\n"
-                                  "принял испытание |cffFF0000ХАРДКОР|r!\n"
-                                  "|cffFF8800Одна жизнь. Одна смерть. Одна судьба.|r\n"
-                                  "|cffFFFF00==========================================|r";
-        ChatHandler(nullptr).SendWorldText(announcement.c_str());
-
-        // Глобальное оповещение на экране
-        const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
-        auto const& players = ObjectAccessor::GetPlayers();
-        for (auto const& pair : players)
-        {
-            if (Player* onlinePlayer = pair.second)
-            {
-                if (WorldSession* session = onlinePlayer->GetSession())
-                {
-                    session->SendAreaTriggerMessage(screenNotification);
-                }
-            }
-        }
-
-        return true;
-    }
 
     static bool HandleHardcoreTopCommand(ChatHandler* handler)
     {

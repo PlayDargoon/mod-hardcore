@@ -154,32 +154,12 @@ class Hardcore_PlayerScript : public PlayerScript
 public:
     Hardcore_PlayerScript() : PlayerScript("Hardcore_PlayerScript") {}
 
-    // Хук при создании персонажа
+    // Хук при создании персонажа - выдаем спелл меню
     void OnCreatePlayer(Player* player)
     {
-        // Выдаем спелл для вызова меню хардкора
         if (!player->HasSpell(38057))
         {
             player->learnSpell(38057);
-        }
-        
-        // Показываем приглашение сразу при создании
-        if (player->GetLevel() == 1)
-        {
-            ChatHandler chatHandle = ChatHandler(player->GetSession());
-            
-            chatHandle.SendSysMessage(" ");
-            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
-            chatHandle.SendSysMessage("|cffFFD700     ДОБРО ПОЖАЛОВАТЬ!|r");
-            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
-            chatHandle.SendSysMessage(" ");
-            chatHandle.SendSysMessage("|cffFFFFFFВам доступен режим |cffFF0000ХАРДКОР|r!|r");
-            chatHandle.SendSysMessage(" ");
-            chatHandle.SendSysMessage("|cff00FF00Для доступа к меню используйте:|r");
-            chatHandle.SendSysMessage("|cffFFFF00  Команда: .menu|r");
-            chatHandle.SendSysMessage("|cffFFFF00  Или найдите спелл в книге заклинаний|r");
-            chatHandle.SendSysMessage(" ");
-            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
         }
     }
 
@@ -213,37 +193,10 @@ public:
 
     void OnLogin(Player* player)
     {
-        // Показать приглашение к режиму хардкор новым персонажам 1 уровня
-        if (!sHardcore->isHardcorePlayer(player) && player->GetLevel() == 1)
+        // Выдаем спелл меню хардкора всем игрокам при входе
+        if (!player->HasSpell(38057))
         {
-            // Проверяем, не отказался ли игрок от испытания
-            uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value; // 10 = HARDCORE_DECLINED
-            
-            if (declined == 0)
-            {
-                // Отправляем красивое приглашение
-                ChatHandler chatHandle = ChatHandler(player->GetSession());
-                
-                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
-                chatHandle.SendSysMessage("|cffFFD700     РЕЖИМ ХАРДКОР ДОСТУПЕН!|r");
-                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
-                chatHandle.SendSysMessage(" ");
-                chatHandle.SendSysMessage("|cffFFFFFFДобро пожаловать, искатель приключений!|r");
-                chatHandle.SendSysMessage("|cffFF8800Вам доступен легендарный режим ХАРДКОР:|r");
-                chatHandle.SendSysMessage(" ");
-                chatHandle.SendSysMessage("|cffFF6347 * ОДНА ЖИЗНЬ - одна смерть = конец|r");
-                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ТОРГОВЛИ - запрещен аукцион|r");
-                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ГРУППЫ - только соло игра|r");
-                chatHandle.SendSysMessage("|cffFF6347 * БЕЗ ГИЛЬДИИ - путь одиночки|r");
-                chatHandle.SendSysMessage(" ");
-                chatHandle.SendSysMessage("|cff00FF00Для активации используйте:|r");
-                chatHandle.SendSysMessage("|cffFFFF00  .hardcore start|r - Начать испытание");
-                chatHandle.SendSysMessage("|cffFFFF00  .hardcore info|r  - Подробности");
-                chatHandle.SendSysMessage("|cffFFFF00  .hardcore decline|r - Отказаться");
-                chatHandle.SendSysMessage(" ");
-                chatHandle.SendSysMessage("|cffFF0000ВНИМАНИЕ: После активации отменить нельзя!|r");
-                chatHandle.SendSysMessage("|cffFF0000==========================================|r");
-            }
+            player->learnSpell(38057);
         }
         
         // Применяем красную ауру, если хардкор активен
@@ -870,10 +823,6 @@ public:
     }
 };
 
-// Объявление функций из других файлов
-void AddSC_HardcoreCommandScript();
-void AddSC_item_hardcore_scroll();
-
 void AddSC_mod_hardcore()
 {
     new Hardcore_WorldScript();
@@ -881,6 +830,4 @@ void AddSC_mod_hardcore()
     new Hardcore_AllScript();
     new Hardcore_GroupScript();
     new Hardcore_BattlegroundScript();
-    AddSC_HardcoreCommandScript();
-    AddSC_item_hardcore_scroll();
 }
