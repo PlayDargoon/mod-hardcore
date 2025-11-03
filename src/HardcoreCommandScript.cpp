@@ -19,6 +19,7 @@ public:
     {
         static ChatCommandTable hardcoreCommandTable =
         {
+            { "start",   HandleHardcoreStartCommand,   SEC_PLAYER, Console::No },
             { "status",  HandleHardcoreStatusCommand,  SEC_PLAYER, Console::No },
             { "info",    HandleHardcoreInfoCommand,    SEC_PLAYER, Console::No },
             { "top",     HandleHardcoreTopCommand,     SEC_PLAYER, Console::No },
@@ -53,16 +54,17 @@ public:
 
         if (isHardcore)
         {
-            handler->PSendSysMessage("|cff00FF00Режим: АКТИВЕН|r");
-            handler->PSendSysMessage("|cffFFFF00Уровень: %u|r", player->GetLevel());
+            handler->SendSysMessage("|cff00FF00Режим: АКТИВЕН|r");
+            std::string levelMsg = "|cffFFFF00Уровень: " + std::to_string(player->GetLevel()) + "|r";
+            handler->SendSysMessage(levelMsg.c_str());
             
             if (isDead)
             {
-                handler->PSendSysMessage("|cffFF0000Статус: ПОГИБ НАВСЕГДА|r");
+                handler->SendSysMessage("|cffFF0000Статус: ПОГИБ НАВСЕГДА|r");
             }
             else
             {
-                handler->PSendSysMessage("|cff00FF00Статус: ЖИВ|r");
+                handler->SendSysMessage("|cff00FF00Статус: ЖИВ|r");
             }
 
             // Информация об окончательной смерти
@@ -70,16 +72,17 @@ public:
             {
                 if (player->GetLevel() > sHardcore->hardcoreMaxDeathLevel)
                 {
-                    handler->PSendSysMessage("|cff00FF00Окончательная смерть: ОТКЛЮЧЕНА|r");
+                    handler->SendSysMessage("|cff00FF00Окончательная смерть: ОТКЛЮЧЕНА|r");
                 }
                 else
                 {
-                    handler->PSendSysMessage("|cffFF8800Окончательная смерть до уровня: %u|r", sHardcore->hardcoreMaxDeathLevel);
+                    std::string maxDeathMsg = "|cffFF8800Окончательная смерть до уровня: " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + "|r";
+                    handler->SendSysMessage(maxDeathMsg.c_str());
                 }
             }
             else
             {
-                handler->PSendSysMessage("|cffFF0000Окончательная смерть: ВСЕГДА|r");
+                handler->SendSysMessage("|cffFF0000Окончательная смерть: ВСЕГДА|r");
             }
 
             // Информация об отключении режима
@@ -87,11 +90,12 @@ public:
             {
                 if (player->GetLevel() >= sHardcore->hardcoreDisableLevel)
                 {
-                    handler->PSendSysMessage("|cff00FF00Режим: ЗАВЕРШЕН|r");
+                    handler->SendSysMessage("|cff00FF00Режим: ЗАВЕРШЕН|r");
                 }
                 else
                 {
-                    handler->PSendSysMessage("|cffFFFF00Режим завершится на уровне: %u|r", sHardcore->hardcoreDisableLevel);
+                    std::string disableLevelMsg = "|cffFFFF00Режим завершится на уровне: " + std::to_string(sHardcore->hardcoreDisableLevel) + "|r";
+                    handler->SendSysMessage(disableLevelMsg.c_str());
                 }
             }
 
@@ -109,11 +113,12 @@ public:
                         uint32 remainingTime = cooldownSeconds - (currentTime - lastDungeonTime);
                         uint32 hoursLeft = remainingTime / HOUR;
                         uint32 minutesLeft = (remainingTime % HOUR) / MINUTE;
-                        handler->PSendSysMessage("|cffFF8800Кулдаун подземелий: %u ч. %u мин.|r", hoursLeft, minutesLeft);
+                        std::string cooldownMsg = "|cffFF8800Кулдаун подземелий: " + std::to_string(hoursLeft) + " ч. " + std::to_string(minutesLeft) + " мин.|r";
+                        handler->SendSysMessage(cooldownMsg.c_str());
                     }
                     else
                     {
-                        handler->PSendSysMessage("|cff00FF00Кулдаун подземелий: готово|r");
+                        handler->SendSysMessage("|cff00FF00Кулдаун подземелий: готово|r");
                     }
                 }
             }
@@ -172,24 +177,127 @@ public:
         if (sHardcore->hardcoreForcePvE)
             handler->PSendSysMessage("• Принудительный PvE");
         if (sHardcore->hardcoreMaxLevelDifference > 0)
-            handler->PSendSysMessage("• Группы: ±%u уровней", sHardcore->hardcoreMaxLevelDifference);
+        {
+            std::string groupMsg = "• Группы: ±" + std::to_string(sHardcore->hardcoreMaxLevelDifference) + " уровней";
+            handler->SendSysMessage(groupMsg.c_str());
+        }
         if (sHardcore->hardcoreDungeonCooldown > 0)
-            handler->PSendSysMessage("• Кулдаун подземелий: %u ч.", sHardcore->hardcoreDungeonCooldown);
+        {
+            std::string cooldownMsg = "• Кулдаун подземелий: " + std::to_string(sHardcore->hardcoreDungeonCooldown) + " ч.";
+            handler->SendSysMessage(cooldownMsg.c_str());
+        }
 
-        handler->PSendSysMessage(" ");
+        handler->SendSysMessage(" ");
         
         if (sHardcore->hardcoreMaxDeathLevel > 0)
         {
-            handler->PSendSysMessage("|cffFF8800Окончательная смерть до %u уровня|r", sHardcore->hardcoreMaxDeathLevel);
+            std::string maxDeathMsg = "|cffFF8800Окончательная смерть до " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + " уровня|r";
+            handler->SendSysMessage(maxDeathMsg.c_str());
         }
         
         if (sHardcore->hardcoreDisableLevel > 0)
         {
-            handler->PSendSysMessage("|cffFF8800Автоотключение на %u уровне|r", sHardcore->hardcoreDisableLevel);
+            std::string disableMsg = "|cffFF8800Автоотключение на " + std::to_string(sHardcore->hardcoreDisableLevel) + " уровне|r";
+            handler->SendSysMessage(disableMsg.c_str());
         }
 
         handler->PSendSysMessage(" ");
         handler->PSendSysMessage("|cffFFFF00Используйте .hardcore status для проверки вашего статуса.|r");
+
+        return true;
+    }
+
+    static bool HandleHardcoreStartCommand(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!player)
+            return false;
+
+        if (!sHardcore->enabled())
+        {
+            handler->SendSysMessage("|cffFF0000Режим хардкор отключен на сервере.|r");
+            return true;
+        }
+
+        // Проверка: уже активирован?
+        if (sHardcore->isHardcorePlayer(player))
+        {
+            handler->SendSysMessage("|cffFF8800Режим хардкор уже активирован для вашего персонажа!|r");
+            handler->SendSysMessage("|cffFFFF00Используйте .hardcore status для проверки статуса.|r");
+            return true;
+        }
+
+        // Проверка: только 1 уровень (или 55 для ДК)
+        uint8 requiredLevel = (player->getClass() == CLASS_DEATH_KNIGHT) ? 55 : 1;
+        if (player->GetLevel() != requiredLevel)
+        {
+            std::string msg = "|cffFF0000Слишком поздно! Хардкор можно активировать только на " + 
+                             std::to_string(requiredLevel) + " уровне!|r";
+            handler->SendSysMessage(msg.c_str());
+            handler->SendSysMessage("|cffFF8800Используйте 'Свиток испытания Хардкор' в инвентаре для активации.|r");
+            return true;
+        }
+
+        // Проверка: запрещённый класс?
+        if (sHardcore->hardcoreBlockDeathKnight && player->getClass() == CLASS_DEATH_KNIGHT)
+        {
+            handler->SendSysMessage("|cffFF0000Рыцари смерти не могут использовать хардкор-режим!|r");
+            return true;
+        }
+
+        // АКТИВАЦИЯ ХАРДКОРА
+        player->SetPlayerSetting("mod-hardcore", SETTING_HARDCORE, 1);
+        
+        // Применить красную ауру
+        uint32 spellId = sHardcore->hardcoreAuraSpellId;
+        if (spellId && !player->HasAura(spellId))
+        {
+            player->AddAura(spellId, player);
+        }
+
+        // ТРИГГЕР ХУКА: Активация хардкора
+        sHardcore->TriggerOnActivate(player);
+        
+        // Сообщение игроку
+        handler->SendSysMessage("|cffFF0000========================================|r");
+        handler->SendSysMessage("|cffFF0000   РЕЖИМ ХАРДКОР АКТИВИРОВАН!|r");
+        handler->SendSysMessage("|cffFF0000========================================|r");
+        handler->SendSysMessage(" ");
+        handler->SendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
+        handler->SendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
+        handler->SendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
+        
+        // Информация об ограничении уровня
+        if (sHardcore->hardcoreMaxDeathLevel > 0)
+        {
+            std::string maxDeathMsg = "|cffFF8800Окончательная смерть действует до " + 
+                                     std::to_string(sHardcore->hardcoreMaxDeathLevel) + " уровня.|r";
+            handler->SendSysMessage(maxDeathMsg.c_str());
+        }
+        if (sHardcore->hardcoreDisableLevel > 0)
+        {
+            std::string disableLevelMsg = "|cffFF8800Режим автоматически отключится на " + 
+                                         std::to_string(sHardcore->hardcoreDisableLevel) + " уровне.|r";
+            handler->SendSysMessage(disableLevelMsg.c_str());
+        }
+        
+        // Глобальное оповещение (чат)
+        std::string announcement = "|cffFFFF00==========================================|r\n"
+                                  "|cffFFFF00[Сервер]|r Игрок |cff00FF00" + player->GetName() + "|r\n"
+                                  "принял испытание |cffFF0000ХАРДКОР|r!\n"
+                                  "|cffFF8800Одна жизнь. Одна смерть. Одна судьба.|r\n"
+                                  "|cffFFFF00==========================================|r";
+        ChatHandler(nullptr).SendWorldText(announcement.c_str());
+
+        // Глобальное оповещение на экране
+        const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
+        sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
+        {
+            if (WorldSession* session = onlinePlayer->GetSession())
+            {
+                session->SendAreaTriggerMessage(screenNotification);
+            }
+        });
 
         return true;
     }
@@ -218,7 +326,7 @@ public:
         for (HashMapHolder<Player>::MapType::const_iterator itr = players.begin(); itr != players.end(); ++itr)
         {
             Player* player = itr->second;
-            if (player && player->IsInWorld())
+            if (player)
             {
                 if (sHardcore->isHardcorePlayer(player))
                 {

@@ -505,8 +505,14 @@ public:
             return;
         }
         
+        // Сохраняем текущий уровень для проверки после получения опыта
+        uint8 oldLevel = player->GetLevel();
+        
         // Применяем множитель опыта
         amount *= sHardcore->hardcoreXPMultiplier;
+        
+        // ВАЖНО: Проверка уровня будет в OnLevelChanged, который должен сработать автоматически
+        // Этот код нужен только для отладки, если OnLevelChanged не работает
     }
 
     /* HOOK NOT AVAILABLE IN THIS AC VERSION
@@ -535,7 +541,7 @@ public:
     }
     */
 
-    void OnLevelChanged(Player* player, uint8 /*oldLevel*/)
+    void OnLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -708,124 +714,6 @@ public:
     }
 };
 
-class gobject_hardcore : public GameObjectScript
-{
-public:
-    gobject_hardcore() : GameObjectScript("gobject_hardcore") { }
-
-    struct gobject_hardcoreAI : GameObjectAI
-    {
-        explicit gobject_hardcoreAI(GameObject* object) : GameObjectAI(object) { };
-
-        bool CanBeSeen(Player const* player) override
-        {
-            // Видим только для новых персонажей (1 уровень или 55 для ДК)
-            if ((player->GetLevel() > 1 && player->getClass() != CLASS_DEATH_KNIGHT) || (player->GetLevel() > 55))
-            {
-                return false;
-            }
-            return sHardcore->enabled();
-        }
-    };
-
-    bool OnGossipHello(Player* player, GameObject* go) override
-    {
-        if (!sHardcore->isHardcorePlayer(player))
-        {
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Активировать режим Хардкор", 0, 1);
-        }
-        SendGossipMenuFor(player, 12669, go->GetGUID());
-        return true;
-    }
-
-    bool OnGossipSelect(Player* player, GameObject* /*go*/, uint32 /*sender*/, uint32 /*action*/) override
-    {
-        // Проверка: рыцари смерти не могут участвовать
-        if (sHardcore->hardcoreBlockDeathKnight && player->getClass() == CLASS_DEATH_KNIGHT)
-        {
-            ChatHandler(player->GetSession()).SendSysMessage("|cffff0000Рыцари смерти НЕ МОГУТ принять участие в режиме «Без права на ошибку»!|r");
-            CloseGossipMenuFor(player);
-            return true;
-        }
-        
-        // Проверка: только для новых персонажей
-        bool eligible = (player->GetLevel() == 1);
-        if (!eligible)
-        {
-            ChatHandler(player->GetSession()).SendSysMessage("|cffff0000Хардкор-режим можно активировать только новым персонажам на 1 уровне!|r");
-            CloseGossipMenuFor(player);
-            return true;
-        }
-
-        player->UpdatePlayerSetting("mod-hardcore", SETTING_HARDCORE, 1);
-        
-        // Применяем красную ауру
-        uint32 spellId = sHardcore->hardcoreAuraSpellId;
-        if (spellId && !player->HasAura(spellId))
-        {
-            if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId))
-            {
-                player->AddAura(spellId, player);
-                if (Aura* aura = player->GetAura(spellId))
-                {
-                    aura->SetDuration(-1);
-                    aura->SetMaxDuration(-1);
-                }
-            }
-        }
-        
-        // ТРИГГЕР ХУКА: Активация хардкора
-        sHardcore->TriggerOnActivate(player);
-        
-        // Сообщение игроку
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000========================================|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000   РЕЖИМ ХАРДКОР АКТИВИРОВАН!|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000========================================|r");
-        ChatHandler(player->GetSession()).SendSysMessage(" ");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
-        ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
-        
-        // Информация об ограничении уровня
-        if (sHardcore->hardcoreMaxDeathLevel > 0)
-        {
-            std::string maxDeathMsg = "|cffFF8800Окончательная смерть действует до " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + " уровня.|r";
-            ChatHandler(player->GetSession()).SendSysMessage(maxDeathMsg.c_str());
-        }
-        if (sHardcore->hardcoreDisableLevel > 0)
-        {
-            std::string disableLevelMsg = "|cffFF8800Режим автоматически отключится на " + std::to_string(sHardcore->hardcoreDisableLevel) + " уровне.|r";
-            ChatHandler(player->GetSession()).SendSysMessage(disableLevelMsg.c_str());
-        }
-        
-        // Глобальное оповещение (чат) - яркое и заметное
-        std::string announcement = "|cffFFFF00==========================================|r\n"
-                                  "|cffFFFF00[Сервер]|r Игрок |cff00FF00" + player->GetName() + "|r\n"
-                                  "принял испытание |cffFF0000ХАРДКОР|r!\n"
-                                  "|cffFF8800Одна жизнь. Одна смерть. Одна судьба.|r\n"
-                                  "|cffFFFF00==========================================|r";
-        ChatHandler(nullptr).SendWorldText(announcement.c_str());
-
-        // Глобальное оповещение на экране - более эпичное
-        const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
-        sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
-        {
-            if (WorldSession* session = onlinePlayer->GetSession())
-            {
-                session->SendAreaTriggerMessage(screenNotification);
-            }
-        });
-        
-        CloseGossipMenuFor(player);
-        return true;
-    }
-
-    GameObjectAI* GetAI(GameObject* object) const override
-    {
-        return new gobject_hardcoreAI(object);
-    }
-};
-
 // Дополнительные ограничения режима хардкор
 class Hardcore_AllScript : public AllCreatureScript
 {
@@ -920,8 +808,9 @@ public:
     }
 };
 
-// Объявление функции из HardcoreCommandScript.cpp
+// Объявление функций из других файлов
 void AddSC_HardcoreCommandScript();
+void AddSC_item_hardcore_scroll();
 
 void AddSC_mod_hardcore()
 {
@@ -930,6 +819,6 @@ void AddSC_mod_hardcore()
     new Hardcore_AllScript();
     new Hardcore_GroupScript();
     new Hardcore_BattlegroundScript();
-    new gobject_hardcore();
     AddSC_HardcoreCommandScript();
+    AddSC_item_hardcore_scroll();
 }
