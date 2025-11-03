@@ -8,6 +8,12 @@
 #include "ScriptedGossip.h"
 #include "Chat.h"
 #include "Hardcore.h"
+#include "SpellScript.h"
+#include "SpellMgr.h"
+#include "ObjectAccessor.h"
+
+// Forward declaration
+void ShowHardcoreMenuToPlayer(Player* player);
 
 // Спелл 38057 - Меню режима Хардкор
 class spell_hardcore_menu : public SpellScript
@@ -16,68 +22,72 @@ class spell_hardcore_menu : public SpellScript
 
     void HandleDummy(SpellEffIndex /*effIndex*/)
     {
-        if (Player* player = GetCaster()->ToPlayer())
+        if (Unit* caster = GetCaster())
         {
-            ShowHardcoreMenu(player);
+            if (Player* player = caster->ToPlayer())
+            {
+                ShowHardcoreMenuToPlayer(player);
+            }
         }
     }
 
-    void ShowHardcoreMenu(Player* player)
-    {
-        ClearGossipMenuFor(player);
-        
-        bool isHardcore = sHardcore->isHardcorePlayer(player);
-        uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value;
-        
-        // Заголовок
-        AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "|cffFFD700[РЕЖИМ ХАРДКОР]|r", GOSSIP_SENDER_MAIN, 0);
-        AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
-        
-        if (isHardcore)
-        {
-            // Игрок уже в режиме хардкор
-            AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cff00FF00Статус: АКТИВЕН|r", GOSSIP_SENDER_MAIN, 1);
-            AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Показать мой статус", GOSSIP_SENDER_MAIN, 2);
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Таблица лидеров", GOSSIP_SENDER_MAIN, 3);
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
-        }
-        else if (declined != 0)
-        {
-            // Игрок отказался от режима
-            AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFF0000Вы отказались от испытания|r", GOSSIP_SENDER_MAIN, 0);
-            AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
-        }
-        else
-        {
-            // Игрок может активировать режим
-            if (player->GetLevel() == 1 || (player->GetLevel() == 55 && player->getClass() == CLASS_DEATH_KNIGHT))
-            {
-                AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFFFF00Режим доступен для активации!|r", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "|cff00FF00[НАЧАТЬ ИСПЫТАНИЕ]|r", GOSSIP_SENDER_MAIN, 5, "Вы уверены? После активации отменить нельзя!", 0);
-                AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
-                AddGossipItemFor(player, GOSSIP_ICON_CHAT, " ", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_DELETE, "|cffFF0000Отказаться от испытания|r", GOSSIP_SENDER_MAIN, 6, "Вы точно хотите отказаться? Потом не сможете активировать!", 0);
-            }
-            else
-            {
-                AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFF0000НЕДОСТУПНО: слишком высокий уровень|r", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_TALK, "Режим можно активировать только на 1 уровне", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
-                AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
-            }
-        }
-        
-        SendGossipMenuFor(player, DEFAULT_GOSSIP_MESSAGE, player->GetGUID());
-    }
-
-    void Register() override
+    void Register()
     {
         OnEffectHitTarget += SpellEffectFn(spell_hardcore_menu::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
+
+// Реализация функции показа меню
+void ShowHardcoreMenuToPlayer(Player* player)
+{
+    ClearGossipMenuFor(player);
+    
+    bool isHardcore = sHardcore->isHardcorePlayer(player);
+    uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value;
+    
+    // Заголовок
+    AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "|cffFFD700[РЕЖИМ ХАРДКОР]|r", GOSSIP_SENDER_MAIN, 0);
+    AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
+    
+    if (isHardcore)
+    {
+        // Игрок уже в режиме хардкор
+        AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cff00FF00Статус: АКТИВЕН|r", GOSSIP_SENDER_MAIN, 1);
+        AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
+        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Показать мой статус", GOSSIP_SENDER_MAIN, 2);
+        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Таблица лидеров", GOSSIP_SENDER_MAIN, 3);
+        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
+    }
+    else if (declined != 0)
+    {
+        // Игрок отказался от режима
+        AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFF0000Вы отказались от испытания|r", GOSSIP_SENDER_MAIN, 0);
+        AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
+        AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
+    }
+    else
+    {
+        // Игрок может активировать режим
+        if (player->GetLevel() == 1 || (player->GetLevel() == 55 && player->getClass() == CLASS_DEATH_KNIGHT))
+        {
+            AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFFFF00Режим доступен для активации!|r", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "|cff00FF00[НАЧАТЬ ИСПЫТАНИЕ]|r", GOSSIP_SENDER_MAIN, 5, "Вы уверены? После активации отменить нельзя!", 0, false);
+            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
+            AddGossipItemFor(player, GOSSIP_ICON_CHAT, " ", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_TRAINER, "|cffFF0000Отказаться от испытания|r", GOSSIP_SENDER_MAIN, 6, "Вы точно хотите отказаться? Потом не сможете активировать!", 0, false);
+        }
+        else
+        {
+            AddGossipItemFor(player, GOSSIP_ICON_DOT, "|cffFF0000НЕДОСТУПНО: слишком высокий уровень|r", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_TALK, "Режим можно активировать только на 1 уровне", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_TALK, " ", GOSSIP_SENDER_MAIN, 0);
+            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Информация о режиме", GOSSIP_SENDER_MAIN, 4);
+        }
+    }
+    
+    SendGossipMenuFor(player, DEFAULT_GOSSIP_MESSAGE, player->GetGUID());
+}
 
 // Обработчик меню
 class hardcore_menu_gossip : public PlayerScript
@@ -85,7 +95,7 @@ class hardcore_menu_gossip : public PlayerScript
 public:
     hardcore_menu_gossip() : PlayerScript("hardcore_menu_gossip") { }
 
-    void OnGossipSelect(Player* player, uint32 /*menu_id*/, uint32 /*sender*/, uint32 action) override
+    void OnGossipSelect(Player* player, uint32 /*menu_id*/, uint32 /*sender*/, uint32 action)
     {
         ClearGossipMenuFor(player);
         ChatHandler handler(player->GetSession());
