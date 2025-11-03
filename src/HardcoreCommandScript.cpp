@@ -343,13 +343,17 @@ public:
 
         // Глобальное оповещение на экране
         const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
-        ObjectAccessor::GetPlayers().foreach([&screenNotification](Player* onlinePlayer)
+        auto const& players = ObjectAccessor::GetPlayers();
+        for (auto const& pair : players)
         {
-            if (WorldSession* session = onlinePlayer->GetSession())
+            if (Player* onlinePlayer = pair.second)
             {
-                session->SendAreaTriggerMessage(screenNotification);
+                if (WorldSession* session = onlinePlayer->GetSession())
+                {
+                    session->SendAreaTriggerMessage(screenNotification);
+                }
             }
-        });
+        }
 
         return true;
     }
