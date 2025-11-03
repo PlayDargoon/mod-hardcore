@@ -6,6 +6,7 @@
 #include "ScriptMgr.h"
 #include "Chat.h"
 #include "Player.h"
+#include "ObjectAccessor.h"
 
 using namespace Acore::ChatCommands;
 
@@ -212,11 +213,12 @@ public:
 
         std::vector<HardcorePlayerInfo> hardcorePlayers;
 
-        // Перебираем всех онлайн игроков
-        SessionMap const& sessions = sWorld->GetAllSessions();
-        for (SessionMap::const_iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
+        // Перебираем всех онлайн игроков через ObjectAccessor
+        HashMapHolder<Player>::MapType const& players = ObjectAccessor::GetPlayers();
+        for (HashMapHolder<Player>::MapType::const_iterator itr = players.begin(); itr != players.end(); ++itr)
         {
-            if (Player* player = itr->second->GetPlayer())
+            Player* player = itr->second;
+            if (player && player->IsInWorld())
             {
                 if (sHardcore->isHardcorePlayer(player))
                 {
