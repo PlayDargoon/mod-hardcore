@@ -56,6 +56,30 @@ bool Hardcore::canEnterDungeon(Player* player, uint32 /*mapId*/)
     return true;
 }
 
+// Альтернативная проверка кулдауна через OnLogin (работает при входе в подземелье после релога)
+void Hardcore::checkDungeonCooldownOnLogin(Player* player)
+{
+    if (!enabled() || !isHardcorePlayer(player) || hardcoreDungeonCooldown == 0)
+        return;
+
+    Map* map = player->GetMap();
+    if (!map || !map->IsDungeon())
+        return;
+
+    if (!canEnterDungeon(player, map->GetId()))
+    {
+        // Телепортируем в точку привязки
+        player->RepopAtGraveyard();
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000[Хардкор] Вы были телепортированы из подземелья из-за кулдауна.|r");
+    }
+    else
+    {
+        // Обновляем время входа
+        player->UpdatePlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME, uint32(time(nullptr)));
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор] Подземелье: следующий вход через %u часов.|r", hardcoreDungeonCooldown);
+    }
+}
+
 class Hardcore_WorldScript : public WorldScript
 {
 public:
@@ -165,6 +189,9 @@ public:
                 player->RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_IN_PVP);
                 player->UpdatePvPState();
             }
+            
+            // Проверка кулдауна подземелий (альтернативная реализация)
+            sHardcore->checkDungeonCooldownOnLogin(player);
         }
         
         // Если персонаж мертв в режиме хардкор

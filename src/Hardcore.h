@@ -59,6 +59,7 @@ public:
     bool isHardcorePlayer(Player* player) const;
     bool isHardcoreDead(Player* player) const;
     bool canEnterDungeon(Player* player, uint32 mapId);
+    void checkDungeonCooldownOnLogin(Player* player);
 };
 
 #define sHardcore Hardcore::instance()
