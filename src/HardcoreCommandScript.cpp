@@ -20,6 +20,7 @@ public:
         {
             { "status",  HandleHardcoreStatusCommand,  SEC_PLAYER, Console::No },
             { "info",    HandleHardcoreInfoCommand,    SEC_PLAYER, Console::No },
+            { "top",     HandleHardcoreTopCommand,     SEC_PLAYER, Console::No },
         };
 
         static ChatCommandTable commandTable =
@@ -188,6 +189,117 @@ public:
 
         handler->PSendSysMessage(" ");
         handler->PSendSysMessage("|cffFFFF00Используйте .hardcore status для проверки вашего статуса.|r");
+
+        return true;
+    }
+
+    static bool HandleHardcoreTopCommand(ChatHandler* handler)
+    {
+        if (!sHardcore->enabled())
+        {
+            handler->SendSysMessage("|cffFF0000Режим хардкор отключен на сервере.|r");
+            return true;
+        }
+
+        // Собираем всех онлайн хардкор-игроков
+        struct HardcorePlayerInfo
+        {
+            std::string name;
+            uint8 level;
+            uint8 classId;
+            bool isDead;
+        };
+
+        std::vector<HardcorePlayerInfo> hardcorePlayers;
+
+        // Перебираем всех онлайн игроков
+        SessionMap const& sessions = sWorld->GetAllSessions();
+        for (SessionMap::const_iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
+        {
+            if (Player* player = itr->second->GetPlayer())
+            {
+                if (sHardcore->isHardcorePlayer(player))
+                {
+                    HardcorePlayerInfo info;
+                    info.name = player->GetName();
+                    info.level = player->GetLevel();
+                    info.classId = player->getClass();
+                    info.isDead = sHardcore->isHardcoreDead(player);
+                    
+                    // Добавляем только живых игроков
+                    if (!info.isDead)
+                    {
+                        hardcorePlayers.push_back(info);
+                    }
+                }
+            }
+        }
+
+        // Сортируем по уровню (от большего к меньшему)
+        std::sort(hardcorePlayers.begin(), hardcorePlayers.end(),
+            [](const HardcorePlayerInfo& a, const HardcorePlayerInfo& b) {
+                return a.level > b.level;
+            });
+
+        // Выводим таблицу лидеров
+        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
+        handler->SendSysMessage("|cffFFD700║  🏆 ТАБЛИЦА ЛИДЕРОВ ХАРДКОР 🏆    ║|r");
+        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
+        handler->SendSysMessage(" ");
+
+        if (hardcorePlayers.empty())
+        {
+            handler->SendSysMessage("|cffFF8800Сейчас нет активных хардкор-игроков онлайн.|r");
+        }
+        else
+        {
+            handler->SendSysMessage("|cffFFFF00ТОП-10 ЖИВЫХ ХАРДКОР-ГЕРОЕВ:|r");
+            handler->SendSysMessage(" ");
+
+            uint32 count = 0;
+            for (const auto& info : hardcorePlayers)
+            {
+                if (++count > 10) // Показываем только топ-10
+                    break;
+
+                // Определяем цвет класса
+                std::string classColor;
+                switch (info.classId)
+                {
+                    case CLASS_WARRIOR:      classColor = "|cffC79C6E"; break; // Коричневый
+                    case CLASS_PALADIN:      classColor = "|cffF58CBA"; break; // Розовый
+                    case CLASS_HUNTER:       classColor = "|cffABD473"; break; // Зелёный
+                    case CLASS_ROGUE:        classColor = "|cffFFF569"; break; // Жёлтый
+                    case CLASS_PRIEST:       classColor = "|cffFFFFFF"; break; // Белый
+                    case CLASS_DEATH_KNIGHT: classColor = "|cffC41F3B"; break; // Красный
+                    case CLASS_SHAMAN:       classColor = "|cff0070DE"; break; // Синий
+                    case CLASS_MAGE:         classColor = "|cff69CCF0"; break; // Голубой
+                    case CLASS_WARLOCK:      classColor = "|cff9482C9"; break; // Фиолетовый
+                    case CLASS_DRUID:        classColor = "|cffFF7D0A"; break; // Оранжевый
+                    default:                 classColor = "|cffFFFFFF"; break;
+                }
+
+                // Медали для топ-3
+                std::string medal;
+                if (count == 1) medal = "|cffFFD700🥇|r";
+                else if (count == 2) medal = "|cffC0C0C0🥈|r";
+                else if (count == 3) medal = "|cffCD7F32🥉|r";
+                else medal = "  ";
+
+                std::string msg = medal + " " + std::to_string(count) + ". " + 
+                                 classColor + info.name + "|r |cffFFFF00(ур. " + 
+                                 std::to_string(info.level) + ")|r";
+                
+                handler->SendSysMessage(msg.c_str());
+            }
+
+            handler->SendSysMessage(" ");
+            std::string totalMsg = "|cff00FF00Всего активных: " + std::to_string(hardcorePlayers.size()) + " игроков|r";
+            handler->SendSysMessage(totalMsg.c_str());
+        }
+
+        handler->SendSysMessage(" ");
+        handler->SendSysMessage("|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r");
 
         return true;
     }

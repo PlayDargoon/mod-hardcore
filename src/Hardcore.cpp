@@ -49,8 +49,9 @@ bool Hardcore::canEnterDungeon(Player* player, uint32 /*mapId*/)
         uint32 hoursLeft = remainingTime / HOUR;
         uint32 minutesLeft = (remainingTime % HOUR) / MINUTE;
         
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000[Хардкор] Вход в подземелье заблокирован!|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Осталось: %u ч. %u мин.|r", hoursLeft, minutesLeft);
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Вход в подземелье заблокирован!|r");
+        std::string timeMsg = "|cffFFFF00Осталось: " + std::to_string(hoursLeft) + " ч. " + std::to_string(minutesLeft) + " мин.|r";
+        ChatHandler(player->GetSession()).SendSysMessage(timeMsg.c_str());
         return false;
     }
 
@@ -80,7 +81,8 @@ void Hardcore::checkDungeonCooldownOnLogin(Player* player)
         
         // Обновляем время входа
         player->UpdatePlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME, uint32(time(nullptr)));
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор] Подземелье: следующий вход через %u часов.|r", hardcoreDungeonCooldown);
+        std::string cooldownMsg = "|cffFFFF00[Хардкор] Подземелье: следующий вход через " + std::to_string(hardcoreDungeonCooldown) + " часов.|r";
+        ChatHandler(player->GetSession()).SendSysMessage(cooldownMsg.c_str());
     }
 }
 
@@ -363,14 +365,16 @@ public:
         // Проверка: если уровень отключения достигнут - не применяем окончательную смерть
         if (sHardcore->hardcoreDisableLevel > 0 && killed->GetLevel() >= sHardcore->hardcoreDisableLevel)
         {
-            ChatHandler(killed->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Режим отключен на %u уровне - смерть не окончательна.", sHardcore->hardcoreDisableLevel);
+            std::string msg = "|cffFFFF00[Хардкор]|r Режим отключен на " + std::to_string(sHardcore->hardcoreDisableLevel) + " уровне - смерть не окончательна.";
+            ChatHandler(killed->GetSession()).SendSysMessage(msg.c_str());
             return;
         }
         
         // Проверка: если уровень игрока выше максимального для окончательной смерти
         if (sHardcore->hardcoreMaxDeathLevel > 0 && killed->GetLevel() > sHardcore->hardcoreMaxDeathLevel)
         {
-            ChatHandler(killed->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Ваш уровень выше %u - смерть не окончательна.", sHardcore->hardcoreMaxDeathLevel);
+            std::string msg = "|cffFFFF00[Хардкор]|r Ваш уровень выше " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + " - смерть не окончательна.";
+            ChatHandler(killed->GetSession()).SendSysMessage(msg.c_str());
             return; // Не применяем окончательную смерть
         }
         
@@ -421,14 +425,16 @@ public:
         // Проверка: если уровень отключения достигнут - не применяем окончательную смерть
         if (sHardcore->hardcoreDisableLevel > 0 && killed->GetLevel() >= sHardcore->hardcoreDisableLevel)
         {
-            ChatHandler(killed->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Режим отключен на %u уровне - смерть не окончательна.", sHardcore->hardcoreDisableLevel);
+            std::string msg = "|cffFFFF00[Хардкор]|r Режим отключен на " + std::to_string(sHardcore->hardcoreDisableLevel) + " уровне - смерть не окончательна.";
+            ChatHandler(killed->GetSession()).SendSysMessage(msg.c_str());
             return;
         }
         
         // Проверка: если уровень игрока выше максимального для окончательной смерти
         if (sHardcore->hardcoreMaxDeathLevel > 0 && killed->GetLevel() > sHardcore->hardcoreMaxDeathLevel)
         {
-            ChatHandler(killed->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Ваш уровень выше %u - смерть не окончательна.", sHardcore->hardcoreMaxDeathLevel);
+            std::string msg = "|cffFFFF00[Хардкор]|r Ваш уровень выше " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + " - смерть не окончательна.";
+            ChatHandler(killed->GetSession()).SendSysMessage(msg.c_str());
             return; // Не применяем окончательную смерть
         }
         
@@ -541,15 +547,66 @@ public:
         // ТРИГГЕР ХУКА: Повышение уровня
         sHardcore->TriggerOnLevelUp(player, level);
         
+        // Глобальное объявление каждые 5 уровней
+        if (level % 5 == 0 && level >= 5)
+        {
+            // Сообщение в чат (глобальное)
+            std::string levelAnnouncement = "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+                                           "|cffFFFF00[Сервер]|r |cff00FF00⚔ ПРОГРЕСС ⚔|r\n"
+                                           "|cff00FF00" + player->GetName() + "|r достиг |cffFFFF00" + std::to_string(level) + " уровня|r\n"
+                                           "в режиме |cffFF0000«Без права на ошибку»|r!\n"
+                                           "|cffFF8800Путь продолжается...|r\n"
+                                           "|cffFFFF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+            ChatHandler(nullptr).SendWorldText(levelAnnouncement.c_str());
+            
+            // Глобальное оповещение на экране
+            std::string screenNotification = "⚔ " + player->GetName() + " достиг " + std::to_string(level) + " уровня в режиме ХАРДКОР! ⚔";
+            sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
+            {
+                if (WorldSession* session = onlinePlayer->GetSession())
+                {
+                    session->SendAreaTriggerMessage(screenNotification);
+                }
+            });
+        }
+        
         // Уведомление при достижении максимального уровня окончательной смерти
         if (sHardcore->hardcoreMaxDeathLevel > 0 && level == sHardcore->hardcoreMaxDeathLevel + 1)
         {
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00╔══════════════════════════════════════╗|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00║  ОКОНЧАТЕЛЬНАЯ СМЕРТЬ ОТКЛЮЧЕНА!    ║|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00╚══════════════════════════════════════╝|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Вы достигли %u уровня!|r", level);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Смерть больше не окончательна.|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00Хардкор-режим продолжает давать бонусы.|r");
+            // Убираем красную ауру (окончательная смерть отключена)
+            uint32 spellId = sHardcore->hardcoreAuraSpellId;
+            if (spellId && player->HasAura(spellId))
+            {
+                player->RemoveAura(spellId);
+            }
+            
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00╔══════════════════════════════════════╗|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00║  ОКОНЧАТЕЛЬНАЯ СМЕРТЬ ОТКЛЮЧЕНА!    ║|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00╚══════════════════════════════════════╝|r");
+            std::string levelMsg = "|cffFFFF00Вы достигли " + std::to_string(level) + " уровня!|r";
+            ChatHandler(player->GetSession()).SendSysMessage(levelMsg.c_str());
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Смерть больше не окончательна.|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00Хардкор-режим продолжает давать бонусы.|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFF8800Красная аура снята.|r");
+            
+            // Глобальное объявление о достижении безопасного уровня
+            std::string safetyAnnouncement = "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+                                            "|cffFFFF00[Сервер]|r |cff00FF00✓ РУБЕЖ ПРОЙДЕН ✓|r\n"
+                                            "|cff00FF00" + player->GetName() + "|r достиг |cffFFFF00" + std::to_string(level) + " уровня|r\n"
+                                            "в режиме |cffFF0000«Без права на ошибку»|r!\n"
+                                            "|cff00FF00Окончательная смерть больше не действует!|r\n"
+                                            "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+            ChatHandler(nullptr).SendWorldText(safetyAnnouncement.c_str());
+            
+            // Экранное уведомление
+            std::string safetyScreenNotification = "✓ " + player->GetName() + " выжил до " + std::to_string(level) + " уровня в ХАРДКОРЕ! ✓";
+            sWorldSessionMgr->DoForAllOnlinePlayers([&safetyScreenNotification](Player* onlinePlayer)
+            {
+                if (WorldSession* session = onlinePlayer->GetSession())
+                {
+                    session->SendAreaTriggerMessage(safetyScreenNotification);
+                }
+            });
         }
 
         // Награды титулами
@@ -572,7 +629,8 @@ public:
         {
             uint32 talentPoints = sHardcore->hardcoreTalentRewards[level];
             player->RewardExtraBonusTalentPoints(talentPoints);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Получено очков талантов: %u", talentPoints);
+            std::string talentMsg = "|cffFFFF00[Хардкор]|r Получено очков талантов: " + std::to_string(talentPoints);
+            ChatHandler(player->GetSession()).SendSysMessage(talentMsg.c_str());
             sHardcore->TriggerOnReward(player, HARDCORE_EVENT_REWARD, talentPoints); // ТРИГГЕР ХУКА
         }
 
@@ -600,7 +658,7 @@ public:
         }
 
         // Автоматическое отключение режима при достижении уровня
-        if (sHardcore->hardcoreDisableLevel > 0 && level >= sHardcore->hardcoreDisableLevel)
+        if (sHardcore->hardcoreDisableLevel > 0 && level == sHardcore->hardcoreDisableLevel)
         {
             player->UpdatePlayerSetting("mod-hardcore", SETTING_HARDCORE, 0);
             
@@ -615,24 +673,30 @@ public:
             sHardcore->TriggerOnComplete(player);
             
             // Эпичное уведомление об отключении режима
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00╔══════════════════════════════════════╗|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00║    ХАРДКОР-РЕЖИМ ЗАВЕРШЕН!          ║|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00╚══════════════════════════════════════╝|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Вы достигли %u уровня!|r", level);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00Режим хардкор автоматически отключен.|r");
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Все ограничения сняты! Поздравляем!|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00╔══════════════════════════════════════╗|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00║    ХАРДКОР-РЕЖИМ ЗАВЕРШЕН!          ║|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00╚══════════════════════════════════════╝|r");
+            std::string completeLevelMsg = "|cffFFFF00Вы достигли " + std::to_string(level) + " уровня!|r";
+            ChatHandler(player->GetSession()).SendSysMessage(completeLevelMsg.c_str());
+            ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00Режим хардкор автоматически отключен.|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Все ограничения сняты! Поздравляем!|r");
             
             // Глобальное оповещение о завершении испытания
-            std::string completionAnnouncement = "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
-                                                "|cffFFFF00[Сервер]|r |cff00FF00⚔ ПОБЕДА ⚔|r\n"
-                                                "|cff00FF00" + player->GetName() + "|r достиг |cffFFFF00" + std::to_string(level) + " уровня|r\n"
-                                                "в режиме |cffFF0000«Без права на ошибку»|r!\n"
-                                                "|cff00FF00Испытание успешно пройдено!|r\n"
-                                                "|cff00FF00━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
+            std::string completionAnnouncement = "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+                                                "|cffFFD700║                                          ║|r\n"
+                                                "|cffFFD700║  |cffFF0000⚔⚔⚔|r |cff00FF00ЭПИЧЕСКАЯ ПОБЕДА|r |cffFF0000⚔⚔⚔|r  |cffFFD700║|r\n"
+                                                "|cffFFD700║                                          ║|r\n"
+                                                "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r\n"
+                                                "|cffFFFF00Игрок|r |cff00FF00" + player->GetName() + "|r\n"
+                                                "достиг |cffFFD700" + std::to_string(level) + " уровня|r и успешно завершил\n"
+                                                "режим |cffFF0000«БЕЗ ПРАВА НА ОШИБКУ»|r!\n"
+                                                "|cff00FF00✦ Ни одной смерти! ✦|r\n"
+                                                "|cffFF8800Легенда сервера!|r\n"
+                                                "|cffFFD700━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━|r";
             ChatHandler(nullptr).SendWorldText(completionAnnouncement.c_str());
             
             // Глобальное оповещение на экране
-            const std::string screenNotification = "⚔ " + player->GetName() + " завершил испытание ХАРДКОР на " + std::to_string(level) + " уровне! ⚔";
+            const std::string screenNotification = "✦✦✦ " + player->GetName() + " ЗАВЕРШИЛ ХАРДКОР-РЕЖИМ НА " + std::to_string(level) + " УРОВНЕ! ЛЕГЕНДА! ✦✦✦";
             sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
             {
                 if (WorldSession* session = onlinePlayer->GetSession())
@@ -714,21 +778,23 @@ public:
         sHardcore->TriggerOnActivate(player);
         
         // Сообщение игроку
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000║   РЕЖИМ ХАРДКОР АКТИВИРОВАН!        ║|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000╚══════════════════════════════════════╝|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
-        ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000║   РЕЖИМ ХАРДКОР АКТИВИРОВАН!        ║|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000╚══════════════════════════════════════╝|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00У вас только ОДНА жизнь!|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cffFFFF00Смерть необратима - воскрешение невозможно.|r");
+        ChatHandler(player->GetSession()).SendSysMessage("|cff00FF00Красная аура показывает ваш статус.|r");
         
         // Информация об ограничении уровня
         if (sHardcore->hardcoreMaxDeathLevel > 0)
         {
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFF8800Окончательная смерть действует до %u уровня.|r", sHardcore->hardcoreMaxDeathLevel);
+            std::string maxDeathMsg = "|cffFF8800Окончательная смерть действует до " + std::to_string(sHardcore->hardcoreMaxDeathLevel) + " уровня.|r";
+            ChatHandler(player->GetSession()).SendSysMessage(maxDeathMsg.c_str());
         }
         if (sHardcore->hardcoreDisableLevel > 0)
         {
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffFF8800Режим автоматически отключится на %u уровне.|r", sHardcore->hardcoreDisableLevel);
+            std::string disableLevelMsg = "|cffFF8800Режим автоматически отключится на " + std::to_string(sHardcore->hardcoreDisableLevel) + " уровне.|r";
+            ChatHandler(player->GetSession()).SendSysMessage(disableLevelMsg.c_str());
         }
         
         // Глобальное оповещение (чат) - яркое и заметное
@@ -829,8 +895,10 @@ public:
                 uint8 levelDiff = abs(int(newPlayer->GetLevel()) - int(groupMember->GetLevel()));
                 if (levelDiff > sHardcore->hardcoreMaxLevelDifference)
                 {
-                    ChatHandler(newPlayer->GetSession()).PSendSysMessage("|cffFF0000[Хардкор] Разница уровней не должна превышать %u! (Разница: %u)|r", 
-                        sHardcore->hardcoreMaxLevelDifference, levelDiff);
+                    std::string levelDiffMsg = "|cffFF0000[Хардкор] Разница уровней не должна превышать " + 
+                        std::to_string(sHardcore->hardcoreMaxLevelDifference) + "! (Разница: " + 
+                        std::to_string(levelDiff) + ")|r";
+                    ChatHandler(newPlayer->GetSession()).SendSysMessage(levelDiffMsg.c_str());
                     group->RemoveMember(guid);
                     return;
                 }
