@@ -195,9 +195,18 @@ public:
                 if (declined == 0)
                 {
                     // Выдаём предмет
-                    if (Item* item = player->AddItem(60000, 1))
+                    ItemPosCountVec dest;
+                    uint32 itemEntry = 60000;
+                    uint32 count = 1;
+                    
+                    InventoryResult msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemEntry, count);
+                    if (msg == EQUIP_ERR_OK)
                     {
-                        player->SendNewItem(item, 1, true, false);
+                        Item* item = player->StoreNewItem(dest, itemEntry, true);
+                        if (item)
+                        {
+                            player->SendNewItem(item, count, true, false);
+                        }
                     }
                 }
             }
@@ -560,7 +569,7 @@ public:
     }
     */
 
-    void OnLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    void OnLevelChanged(Player* player, uint8 /*oldLevel*/)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {

@@ -298,7 +298,7 @@ public:
         }
 
         // АКТИВАЦИЯ ХАРДКОРА
-        player->SetPlayerSetting("mod-hardcore", SETTING_HARDCORE, 1);
+        player->UpdatePlayerSetting("mod-hardcore", SETTING_HARDCORE, 1);
         
         // Применить красную ауру
         uint32 spellId = sHardcore->hardcoreAuraSpellId;
@@ -343,7 +343,7 @@ public:
 
         // Глобальное оповещение на экране
         const std::string screenNotification = player->GetName() + " начал испытание ХАРДКОР!";
-        sWorldSessionMgr->DoForAllOnlinePlayers([&screenNotification](Player* onlinePlayer)
+        ObjectAccessor::GetPlayers().foreach([&screenNotification](Player* onlinePlayer)
         {
             if (WorldSession* session = onlinePlayer->GetSession())
             {

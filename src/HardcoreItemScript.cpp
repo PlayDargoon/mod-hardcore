@@ -49,13 +49,11 @@ private:
         if (!isHardcore)
         {
             // Игрок еще не активировал хардкор
-            if (player->GetLevel() > sHardcore->hardcoreMaxStartingLevel)
+            if (player->GetLevel() > 1)
             {
                 std::string msg = "|cffFF0000НЕДОСТУПНО: Слишком высокий уровень!|r";
                 handler.SendSysMessage(msg.c_str());
-                std::string requireMsg = "|cffFF8800Хардкор можно активировать только на " + 
-                                        std::to_string(sHardcore->hardcoreMaxStartingLevel) + " уровне или ниже.|r";
-                handler.SendSysMessage(requireMsg.c_str());
+                handler.SendSysMessage("|cffFF8800Хардкор можно активировать только на 1 уровне.|r");
             }
             else if (sHardcore->hardcoreBlockDeathKnight && player->getClass() == CLASS_DEATH_KNIGHT)
             {
