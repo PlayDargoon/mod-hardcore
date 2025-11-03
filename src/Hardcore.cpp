@@ -6,6 +6,7 @@
 #include "WorldSessionMgr.h"
 #include "WorldSession.h"
 #include "Spell.h"
+#include "BattlegroundMgr.h"
 
 Hardcore* Hardcore::instance()
 {
@@ -479,7 +480,7 @@ public:
         return true;
     }
 
-    void OnPlayerResurrect(Player* player, float /*restore_percent*/, bool /*applySickness*/)
+    void OnPlayerResurrect(Player* player, float /*restore_percent*/, bool /*applySickness*/) override
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -770,7 +771,7 @@ public:
         // Блокировка аукциона
         if (sHardcore->hardcoreBlockAuction && sHardcore->isHardcorePlayer(player))
         {
-            if (creature->IsAuctioneer())
+            if (creature->IsAuctioner())
             {
                 ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Аукцион недоступен в режиме «Без права на ошибку»!|r");
                 return false;
@@ -797,11 +798,11 @@ public:
     Hardcore_GroupScript() : GroupScript("Hardcore_GroupScript") {}
 
     // Проверка при добавлении игрока в группу
-    bool OnAddMember(Group* group, ObjectGuid guid) override
+    void OnAddMember(Group* group, ObjectGuid guid) override
     {
         Player* newPlayer = ObjectAccessor::FindPlayer(guid);
         if (!newPlayer)
-            return true;
+            return;
 
         bool newPlayerIsHardcore = sHardcore->isHardcorePlayer(newPlayer);
         
@@ -818,7 +819,8 @@ public:
             if (newPlayerIsHardcore != groupMemberIsHardcore)
             {
                 ChatHandler(newPlayer->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Вы можете группироваться только с игроками того же режима!|r");
-                return false;
+                group->RemoveMember(guid);
+                return;
             }
 
             // Проверка разницы уровней для хардкор игроков
@@ -829,22 +831,21 @@ public:
                 {
                     ChatHandler(newPlayer->GetSession()).PSendSysMessage("|cffFF0000[Хардкор] Разница уровней не должна превышать %u! (Разница: %u)|r", 
                         sHardcore->hardcoreMaxLevelDifference, levelDiff);
-                    return false;
+                    group->RemoveMember(guid);
+                    return;
                 }
             }
         }
-
-        return true;
     }
 };
 
-class Hardcore_BattlegroundScript : public BGScript
+class Hardcore_BattlegroundScript : public AllBattlegroundScript
 {
 public:
-    Hardcore_BattlegroundScript() : BGScript("Hardcore_BattlegroundScript") {}
+    Hardcore_BattlegroundScript() : AllBattlegroundScript("Hardcore_BattlegroundScript") {}
 
     // Блокировка полей боя
-    bool CanFillPlayersToBG(Battleground* /*bg*/, BattlegroundTypeId /*bgTypeId*/) override
+    bool CanFillPlayersToBG(BattlegroundQueue* /*queue*/, Battleground* /*bg*/, BattlegroundBracketId /*bracket_id*/) override
     {
         return true;
     }
