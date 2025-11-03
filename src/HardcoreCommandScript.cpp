@@ -29,9 +29,21 @@ public:
         static ChatCommandTable commandTable =
         {
             { "hardcore", hardcoreCommandTable },
+            { "menu",     HandleMenuCommand,     SEC_PLAYER, Console::No },
         };
 
         return commandTable;
+    }
+
+    static bool HandleMenuCommand(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!player)
+            return false;
+
+        // Кастуем спелл меню
+        player->CastSpell(player, 38057, true);
+        return true;
     }
 
     static bool HandleHardcoreDeclineCommand(ChatHandler* handler)

@@ -154,6 +154,35 @@ class Hardcore_PlayerScript : public PlayerScript
 public:
     Hardcore_PlayerScript() : PlayerScript("Hardcore_PlayerScript") {}
 
+    // Хук при создании персонажа
+    void OnCreatePlayer(Player* player)
+    {
+        // Выдаем спелл для вызова меню хардкора
+        if (!player->HasSpell(38057))
+        {
+            player->learnSpell(38057);
+        }
+        
+        // Показываем приглашение сразу при создании
+        if (player->GetLevel() == 1)
+        {
+            ChatHandler chatHandle = ChatHandler(player->GetSession());
+            
+            chatHandle.SendSysMessage(" ");
+            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
+            chatHandle.SendSysMessage("|cffFFD700     ДОБРО ПОЖАЛОВАТЬ!|r");
+            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
+            chatHandle.SendSysMessage(" ");
+            chatHandle.SendSysMessage("|cffFFFFFFВам доступен режим |cffFF0000ХАРДКОР|r!|r");
+            chatHandle.SendSysMessage(" ");
+            chatHandle.SendSysMessage("|cff00FF00Для доступа к меню используйте:|r");
+            chatHandle.SendSysMessage("|cffFFFF00  Команда: .menu|r");
+            chatHandle.SendSysMessage("|cffFFFF00  Или найдите спелл в книге заклинаний|r");
+            chatHandle.SendSysMessage(" ");
+            chatHandle.SendSysMessage("|cffFF0000==========================================|r");
+        }
+    }
+
     // Применить красную ауру хардкора
     void ApplyHardcoreAura(Player* player)
     {
