@@ -184,6 +184,25 @@ public:
 
     void OnLogin(Player* player)
     {
+        // Выдать предмет "Свиток испытания Хардкор" новым персонажам 1 уровня
+        if (!sHardcore->isHardcorePlayer(player) && player->GetLevel() == 1)
+        {
+            // Проверяем, есть ли уже предмет
+            if (!player->HasItemCount(60000, 1))
+            {
+                // Проверяем, не отказался ли игрок от испытания
+                uint32 declined = player->GetPlayerSetting("mod-hardcore", 10).value; // 10 = HARDCORE_DECLINED
+                if (declined == 0)
+                {
+                    // Выдаём предмет
+                    if (Item* item = player->AddItem(60000, 1))
+                    {
+                        player->SendNewItem(item, 1, true, false);
+                    }
+                }
+            }
+        }
+        
         // Применяем красную ауру, если хардкор активен
         if (sHardcore->isHardcorePlayer(player))
         {

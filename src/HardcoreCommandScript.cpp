@@ -20,6 +20,7 @@ public:
         static ChatCommandTable hardcoreCommandTable =
         {
             { "start",   HandleHardcoreStartCommand,   SEC_PLAYER, Console::No },
+            { "decline", HandleHardcoreDeclineCommand, SEC_PLAYER, Console::No },
             { "status",  HandleHardcoreStatusCommand,  SEC_PLAYER, Console::No },
             { "info",    HandleHardcoreInfoCommand,    SEC_PLAYER, Console::No },
             { "top",     HandleHardcoreTopCommand,     SEC_PLAYER, Console::No },
@@ -31,6 +32,57 @@ public:
         };
 
         return commandTable;
+    }
+
+    static bool HandleHardcoreDeclineCommand(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!player)
+            return false;
+
+        if (!sHardcore->enabled())
+        {
+            handler->SendSysMessage("|cffFF0000Режим хардкор отключен на сервере.|r");
+            return true;
+        }
+
+        // Проверка: уже активирован хардкор?
+        if (sHardcore->isHardcorePlayer(player))
+        {
+            handler->SendSysMessage("|cffFF8800Вы уже активировали режим хардкор!|r");
+            handler->SendSysMessage("|cffFFFF00Отказаться невозможно - испытание принято.|r");
+            return true;
+        }
+
+        // Проверка: слишком высокий уровень?
+        if (player->GetLevel() > 1)
+        {
+            handler->SendSysMessage("|cffFF8800Вы уже прошли 1 уровень.|r");
+            handler->SendSysMessage("|cffFFFF00Свиток испытания больше не актуален.|r");
+            
+            // Удаляем предмет если есть
+            player->DestroyItemCount(60000, 1, true);
+            return true;
+        }
+
+        // Отказ от испытания
+        handler->SendSysMessage(" ");
+        handler->SendSysMessage("|cffFF0000========================================|r");
+        handler->SendSysMessage("|cffFF0000   ВЫ ОТКАЗАЛИСЬ ОТ ИСПЫТАНИЯ|r");
+        handler->SendSysMessage("|cffFF0000========================================|r");
+        handler->SendSysMessage(" ");
+        handler->SendSysMessage("|cffFFFF00Свиток испытания Хардкор удален.|r");
+        handler->SendSysMessage("|cffFFFF00Вы больше не сможете активировать этот режим.|r");
+        handler->SendSysMessage("|cff00FF00Удачи в обычных приключениях!|r");
+        handler->SendSysMessage(" ");
+
+        // Сохраняем отказ в настройках персонажа
+        player->UpdatePlayerSetting("mod-hardcore", 10, 1); // 10 = HARDCORE_DECLINED
+        
+        // Удаляем предмет
+        player->DestroyItemCount(60000, 1, true);
+
+        return true;
     }
 
     static bool HandleHardcoreStatusCommand(ChatHandler* handler)

@@ -67,6 +67,7 @@ private:
                 handler.SendSysMessage(" ");
                 handler.SendSysMessage("|cffFFFF00Команды:|r");
                 handler.SendSysMessage("|cffFFFF00• .hardcore start|r - |cff00FF00Активировать режим|r");
+                handler.SendSysMessage("|cffFFFF00• .hardcore decline|r - |cffFF0000Отказаться от испытания|r");
                 handler.SendSysMessage("|cffFFFF00• .hardcore info|r - Информация о режиме");
                 handler.SendSysMessage("|cffFFFF00• .hardcore top|r - Таблица лидеров");
                 handler.SendSysMessage(" ");
@@ -75,6 +76,8 @@ private:
                 handler.SendSysMessage("|cffFF8800• Смерть окончательна (до определенного уровня)|r");
                 handler.SendSysMessage("|cffFF8800• Воскрешение невозможно|r");
                 handler.SendSysMessage("|cffFF8800• Ограничения на группы, почту, аукцион|r");
+                handler.SendSysMessage(" ");
+                handler.SendSysMessage("|cffFF8800Если не хотите участвовать - используйте .hardcore decline|r");
             }
         }
         else
