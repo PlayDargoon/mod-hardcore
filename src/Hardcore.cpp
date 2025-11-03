@@ -74,6 +74,9 @@ void Hardcore::checkDungeonCooldownOnLogin(Player* player)
     }
     else
     {
+        // Триггер события входа в подземелье
+        sHardcore->TriggerOnDungeonEnter(player, map->GetId());
+        
         // Обновляем время входа
         player->UpdatePlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME, uint32(time(nullptr)));
         ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор] Подземелье: следующий вход через %u часов.|r", hardcoreDungeonCooldown);
@@ -374,6 +377,9 @@ public:
         killed->BuildPlayerRepop();
         killed->RepopAtGraveyard();
         
+        // ТРИГГЕР ХУКА: Смерть хардкор-игрока (PvP)
+        sHardcore->TriggerOnDeath(killed);
+        
         // Сообщение погибшему игроку
         ChatHandler(killed->GetSession()).PSendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");
         ChatHandler(killed->GetSession()).PSendSysMessage("|cffFF0000║        ВЫ ПОГИБЛИ НАВСЕГДА!         ║|r");
@@ -428,6 +434,9 @@ public:
         killed->UpdatePlayerSetting("mod-hardcore", HARDCORE_DEAD, 1);
         killed->BuildPlayerRepop();
         killed->RepopAtGraveyard();
+        
+        // ТРИГГЕР ХУКА: Смерть хардкор-игрока (PvE)
+        sHardcore->TriggerOnDeath(killed);
         
         // Сообщение погибшему игроку
         ChatHandler(killed->GetSession()).PSendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");
@@ -528,6 +537,9 @@ public:
 
         uint8 level = player->GetLevel();
         
+        // ТРИГГЕР ХУКА: Повышение уровня
+        sHardcore->TriggerOnLevelUp(player, level);
+        
         // Уведомление при достижении максимального уровня окончательной смерти
         if (sHardcore->hardcoreMaxDeathLevel > 0 && level == sHardcore->hardcoreMaxDeathLevel + 1)
         {
@@ -550,6 +562,7 @@ public:
                 std::string titleNameStr = Acore::StringFormat(player->getGender() == GENDER_MALE ? titleInfo->nameMale[handler.GetSessionDbcLocale()] : titleInfo->nameFemale[handler.GetSessionDbcLocale()], player->GetName());
                 player->SetTitle(titleInfo);
                 handler.PSendSysMessage("|cffFFFF00[Хардкор]|r Получен титул: %s", titleNameStr.c_str());
+                sHardcore->TriggerOnReward(player, HARDCORE_EVENT_REWARD, titleId); // ТРИГГЕР ХУКА
             }
         }
 
@@ -559,6 +572,7 @@ public:
             uint32 talentPoints = sHardcore->hardcoreTalentRewards[level];
             player->RewardExtraBonusTalentPoints(talentPoints);
             ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Получено очков талантов: %u", talentPoints);
+            sHardcore->TriggerOnReward(player, HARDCORE_EVENT_REWARD, talentPoints); // ТРИГГЕР ХУКА
         }
 
         // Награды достижениями
@@ -570,6 +584,7 @@ public:
             {
                 player->CompletedAchievement(achievementInfo);
                 ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Получено достижение!");
+                sHardcore->TriggerOnReward(player, HARDCORE_EVENT_REWARD, achievementId); // ТРИГГЕР ХУКА
             }
         }
 
@@ -580,6 +595,7 @@ public:
             uint32 itemAmount = sHardcore->hardcoreItemRewardAmount;
             player->SendItemRetrievalMail({ { itemEntry, itemAmount } });
             ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор]|r Награда отправлена по почте!");
+            sHardcore->TriggerOnReward(player, HARDCORE_EVENT_REWARD, itemEntry); // ТРИГГЕР ХУКА
         }
 
         // Автоматическое отключение режима при достижении уровня
@@ -593,6 +609,9 @@ public:
             {
                 player->RemoveAura(spellId);
             }
+            
+            // Триггер события успешного завершения хардкор-режима
+            sHardcore->TriggerOnComplete(player);
             
             // Эпичное уведомление об отключении режима
             ChatHandler(player->GetSession()).PSendSysMessage("|cff00FF00╔══════════════════════════════════════╗|r");
@@ -689,6 +708,9 @@ public:
                 }
             }
         }
+        
+        // ТРИГГЕР ХУКА: Активация хардкора
+        sHardcore->TriggerOnActivate(player);
         
         // Сообщение игроку
         ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000╔══════════════════════════════════════╗|r");

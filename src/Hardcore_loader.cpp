@@ -5,8 +5,14 @@
 // From SC
 void AddSC_mod_hardcore();
 
-// Add all scripts
+// Add all scripts - using both names for compatibility
 void Addmod_hardcoreScripts()
+{
+    AddSC_mod_hardcore();
+}
+
+// Alternative name for auto-generated loader
+void AddHardcoreScripts()
 {
     AddSC_mod_hardcore();
 }
