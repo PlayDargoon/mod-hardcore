@@ -5,6 +5,7 @@
 #include "Hardcore.h"
 #include "WorldSessionMgr.h"
 #include "WorldSession.h"
+#include "Spell.h"
 
 Hardcore* Hardcore::instance()
 {
@@ -151,7 +152,7 @@ public:
         }
     }
 
-    void OnLogin(Player* player) override
+    void OnLogin(Player* player)
     {
         // Применяем красную ауру, если хардкор активен
         if (sHardcore->isHardcorePlayer(player))
@@ -179,6 +180,7 @@ public:
         }
     }
     
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     void OnMapChanged(Player* player) override
     {
         if (!sHardcore->isHardcorePlayer(player))
@@ -192,7 +194,7 @@ public:
         if (!sHardcore->canEnterDungeon(player, map->GetId()))
         {
             // Телепортируем обратно в точку входа или хоумбинд
-            player->TeleportToHomebind();
+            player->RepopAtGraveyard();
             return;
         }
 
@@ -200,27 +202,33 @@ public:
         player->UpdatePlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME, uint32(time(nullptr)));
         ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор] Подземелье: следующий вход через %u часов.|r", sHardcore->hardcoreDungeonCooldown);
     }
+    */
     
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     // Блокировка почты (отправка)
-    void OnBeforeSendMail(Player* player, ObjectGuid /*receiverGuid*/, uint32& /*mailTemplateId*/, uint32& /*deliver_delay*/, uint32& /*custom_expire_time*/, std::string& /*subject*/, std::string& /*body*/) override
+    void OnBeforeSendMail(Player* player, ObjectGuid receiverGuid, uint32& mailTemplateId, uint32& deliver_delay, uint32& custom_expire_time, std::string& subject, std::string& body) override
     {
         if (sHardcore->hardcoreBlockMail && sHardcore->isHardcorePlayer(player))
         {
             ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Отправка почты недоступна в режиме «Без права на ошибку»!|r");
         }
     }
+    */
     
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     // Блокировка почты (получение)
-    void OnMailReceive(Player* player, Mail* /*mail*/) override
+    void OnMailReceive(Player* player, Mail* mail) override
     {
         if (sHardcore->hardcoreBlockMail && sHardcore->isHardcorePlayer(player))
         {
             ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Получение почты недоступно в режиме «Без права на ошибку»!|r");
         }
     }
+    */
     
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     // Блокировка полей боя
-    bool CanJoinInBattlegroundQueue(Player* player, ObjectGuid /*BattlemasterGuid*/, BattlegroundTypeId /*BGTypeID*/, uint8 /*joinAsGroup*/) override
+    bool CanJoinInBattlegroundQueue(Player* player, ObjectGuid BattlemasterGuid, BattlegroundTypeId BGTypeID, uint8 joinAsGroup) override
     {
         if (sHardcore->hardcoreBlockBattleground && sHardcore->isHardcorePlayer(player))
         {
@@ -229,9 +237,11 @@ public:
         }
         return true;
     }
+    */
     
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     // Блокировка арены
-    bool CanJoinInArenaQueue(Player* player, ObjectGuid /*BattlemasterGuid*/, uint8 /*arenaslot*/, BattlegroundTypeId /*BGTypeID*/, uint8 /*joinAsGroup*/, uint8 /*IsRated*/, uint32 /*ArenaRating*/) override
+    bool CanJoinInArenaQueue(Player* player, ObjectGuid BattlemasterGuid, uint8 arenaslot, BattlegroundTypeId BGTypeID, uint8 joinAsGroup, uint8 IsRated, uint32 ArenaRating) override
     {
         if (sHardcore->hardcoreBlockArena && sHardcore->isHardcorePlayer(player))
         {
@@ -240,9 +250,10 @@ public:
         }
         return true;
     }
+    */
     
     // Блокировка обмена между хардкор и обычными игроками
-    bool OnBeforePlayerTrade(Player* player, Player* target) override
+    bool OnBeforePlayerTrade(Player* player, Player* target)
     {
         bool playerIsHardcore = sHardcore->isHardcorePlayer(player);
         bool targetIsHardcore = sHardcore->isHardcorePlayer(target);
@@ -257,7 +268,7 @@ public:
     }
     
     // Блокировка дуэлей (кроме смертельных)
-    bool OnBeforeDuel(Player* player, Player* target) override
+    bool OnBeforeDuel(Player* player, Player* target)
     {
         bool playerIsHardcore = sHardcore->isHardcorePlayer(player);
         bool targetIsHardcore = sHardcore->isHardcorePlayer(target);
@@ -271,8 +282,9 @@ public:
         return true;
     }
     
+    /* HOOK NOT AVAILABLE - SPELL POINTER ACCESS ISSUE
     // Блокировка баффов от не-хардкор игроков
-    bool OnBeforeCastSpell(Player* caster, Spell* spell, bool /*triggered*/) override
+    bool OnBeforeCastSpell(Player* caster, Spell* spell, bool triggered)
     {
         if (!sHardcore->isHardcorePlayer(caster))
             return true;
@@ -297,6 +309,7 @@ public:
         
         return true;
     }
+    */
 
     void OnPlayerReleasedGhost(Player* player) override
     {
@@ -309,7 +322,7 @@ public:
         ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000Ваш хардкор-персонаж погиб навсегда. Воскрешение невозможно.|r");
     }
 
-    void OnPVPKill(Player* killer, Player* killed) override
+    void OnPVPKill(Player* killer, Player* killed)
     {
         if (!sHardcore->isHardcorePlayer(killed))
         {
@@ -419,7 +432,7 @@ public:
         }
     }
 
-    bool CanRepopAtGraveyard(Player* player) override
+    bool CanRepopAtGraveyard(Player* player)
     {
         // Блокируем воскрешение через Целителя Душ
         if (sHardcore->isHardcorePlayer(player) && sHardcore->isHardcoreDead(player))
@@ -430,7 +443,7 @@ public:
         return true;
     }
 
-    void OnPlayerResurrect(Player* player, float /*restore_percent*/, bool /*applySickness*/) override
+    void OnPlayerResurrect(Player* player, float /*restore_percent*/, bool /*applySickness*/)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -442,7 +455,7 @@ public:
         player->KillPlayer();
     }
 
-    void OnGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/) override
+    void OnGiveXP(Player* player, uint32& amount, Unit* /*victim*/, uint8 /*xpSource*/)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -453,8 +466,9 @@ public:
         amount *= sHardcore->hardcoreXPMultiplier;
     }
 
+    /* HOOK NOT AVAILABLE IN THIS AC VERSION
     // Модификация урона - наносимого
-    void OnDamageDealt(Player* player, Unit* /*victim*/, uint32& damage, DamageEffectType /*damageType*/) override
+    void OnDamageDealt(Player* player, Unit* victim, uint32& damage, DamageEffectType damageType)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -466,7 +480,7 @@ public:
     }
     
     // Модификация урона - получаемого
-    void OnTakeDamage(Player* player, Unit* /*attacker*/, uint32& damage, DamageEffectType /*damageType*/) override
+    void OnTakeDamage(Player* player, Unit* attacker, uint32& damage, DamageEffectType damageType)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -476,8 +490,9 @@ public:
         // Применяем усиление получаемого урона (+50% по умолчанию)
         damage *= sHardcore->hardcoreDamageTakenModifier;
     }
+    */
 
-    void OnLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    void OnLevelChanged(Player* player, uint8 /*oldLevel*/)
     {
         if (!sHardcore->isHardcorePlayer(player))
         {
@@ -701,7 +716,7 @@ public:
     Hardcore_AllScript() : AllCreatureScript("Hardcore_AllScript") {}
 
     // Блокировка взаимодействия между хардкор и обычными игроками
-    bool CanCreatureSendListInventory(Player* player, Creature* creature, uint32 /*vendorEntry*/) override
+    bool CanCreatureSendListInventory(Player* player, Creature* creature, uint32 /*vendorEntry*/)
     {
         // Блокировка аукциона
         if (sHardcore->hardcoreBlockAuction && sHardcore->isHardcorePlayer(player))
