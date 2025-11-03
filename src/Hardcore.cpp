@@ -30,6 +30,31 @@ bool Hardcore::isHardcoreDead(Player* player) const
     return player->GetPlayerSetting("mod-hardcore", HARDCORE_DEAD).value;
 }
 
+bool Hardcore::canEnterDungeon(Player* player, uint32 /*mapId*/)
+{
+    if (!enabled() || !isHardcorePlayer(player) || hardcoreDungeonCooldown == 0)
+    {
+        return true;
+    }
+
+    uint32 lastDungeonTime = player->GetPlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME).value;
+    uint32 currentTime = uint32(time(nullptr));
+    uint32 cooldownSeconds = hardcoreDungeonCooldown * HOUR;
+
+    if (lastDungeonTime > 0 && (currentTime - lastDungeonTime) < cooldownSeconds)
+    {
+        uint32 remainingTime = cooldownSeconds - (currentTime - lastDungeonTime);
+        uint32 hoursLeft = remainingTime / HOUR;
+        uint32 minutesLeft = (remainingTime % HOUR) / MINUTE;
+        
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffFF0000[Хардкор] Вход в подземелье заблокирован!|r");
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00Осталось: %u ч. %u мин.|r", hoursLeft, minutesLeft);
+        return false;
+    }
+
+    return true;
+}
+
 class Hardcore_WorldScript : public WorldScript
 {
 public:
@@ -154,18 +179,65 @@ public:
         }
     }
     
-    // Блокировка почты
+    void OnMapChanged(Player* player) override
+    {
+        if (!sHardcore->isHardcorePlayer(player))
+            return;
+
+        Map* map = player->GetMap();
+        if (!map || !map->IsDungeon())
+            return;
+
+        // Проверяем кулдаун при входе в подземелье
+        if (!sHardcore->canEnterDungeon(player, map->GetId()))
+        {
+            // Телепортируем обратно в точку входа или хоумбинд
+            player->TeleportToHomebind();
+            return;
+        }
+
+        // Обновляем время последнего входа в подземелье
+        player->UpdatePlayerSetting("mod-hardcore", HARDCORE_LAST_DUNGEON_TIME, uint32(time(nullptr)));
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffFFFF00[Хардкор] Подземелье: следующий вход через %u часов.|r", sHardcore->hardcoreDungeonCooldown);
+    }
+    
+    // Блокировка почты (отправка)
+    void OnBeforeSendMail(Player* player, ObjectGuid /*receiverGuid*/, uint32& /*mailTemplateId*/, uint32& /*deliver_delay*/, uint32& /*custom_expire_time*/, std::string& /*subject*/, std::string& /*body*/) override
+    {
+        if (sHardcore->hardcoreBlockMail && sHardcore->isHardcorePlayer(player))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Отправка почты недоступна в режиме «Без права на ошибку»!|r");
+        }
+    }
+    
+    // Блокировка почты (получение)
     void OnMailReceive(Player* player, Mail* /*mail*/) override
     {
         if (sHardcore->hardcoreBlockMail && sHardcore->isHardcorePlayer(player))
         {
-            ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Почта недоступна в режиме «Без права на ошибку»!|r");
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Получение почты недоступно в режиме «Без права на ошибку»!|r");
         }
     }
     
     // Блокировка полей боя
-    bool OnBeforeBuyItemFromVendor(Player* player, ObjectGuid /*vendorguid*/, uint32 /*vendorslot*/, uint32& /*item*/, uint8 /*count*/, uint8 /*bag*/, uint8 /*slot*/) override
+    bool CanJoinInBattlegroundQueue(Player* player, ObjectGuid /*BattlemasterGuid*/, BattlegroundTypeId /*BGTypeID*/, uint8 /*joinAsGroup*/) override
     {
+        if (sHardcore->hardcoreBlockBattleground && sHardcore->isHardcorePlayer(player))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Поля боя недоступны в режиме «Без права на ошибку»!|r");
+            return false;
+        }
+        return true;
+    }
+    
+    // Блокировка арены
+    bool CanJoinInArenaQueue(Player* player, ObjectGuid /*BattlemasterGuid*/, uint8 /*arenaslot*/, BattlegroundTypeId /*BGTypeID*/, uint8 /*joinAsGroup*/, uint8 /*IsRated*/, uint32 /*ArenaRating*/) override
+    {
+        if (sHardcore->hardcoreBlockArena && sHardcore->isHardcorePlayer(player))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("|cffFF0000[Хардкор] Арена недоступна в режиме «Без права на ошибку»!|r");
+            return false;
+        }
         return true;
     }
     
@@ -714,6 +786,9 @@ public:
     }
 };
 
+// Объявление функции из HardcoreCommandScript.cpp
+void AddSC_HardcoreCommandScript();
+
 void AddSC_mod_hardcore()
 {
     new Hardcore_WorldScript();
@@ -722,4 +797,5 @@ void AddSC_mod_hardcore()
     new Hardcore_GroupScript();
     new Hardcore_BattlegroundScript();
     new gobject_hardcore();
+    AddSC_HardcoreCommandScript();
 }

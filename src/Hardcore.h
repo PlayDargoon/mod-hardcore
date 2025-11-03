@@ -17,7 +17,8 @@
 enum HardcoreSettings
 {
     SETTING_HARDCORE = 0,
-    HARDCORE_DEAD    = 1
+    HARDCORE_DEAD    = 1,
+    HARDCORE_LAST_DUNGEON_TIME = 2
 };
 
 class Hardcore
@@ -57,6 +58,7 @@ public:
 
     bool isHardcorePlayer(Player* player) const;
     bool isHardcoreDead(Player* player) const;
+    bool canEnterDungeon(Player* player, uint32 mapId);
 };
 
 #define sHardcore Hardcore::instance()

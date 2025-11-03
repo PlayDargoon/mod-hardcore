@@ -3,5 +3,6 @@ AC_ADD_SCRIPT("${CMAKE_CURRENT_LIST_DIR}/src/Hardcore_loader.cpp")
 AC_ADD_SCRIPT_LOADER("Hardcore" "${CMAKE_CURRENT_LIST_DIR}/src/Hardcore_loader.cpp")
 
 CU_ADD_HOOK(AFTER_WORLDSERVER_CMAKE "${CMAKE_CURRENT_LIST_DIR}/src/Hardcore.cpp")
+CU_ADD_HOOK(AFTER_WORLDSERVER_CMAKE "${CMAKE_CURRENT_LIST_DIR}/src/HardcoreCommandScript.cpp")
 
 AC_ADD_CONFIG_FILE("${CMAKE_CURRENT_LIST_DIR}/conf/hardcore.conf.dist")

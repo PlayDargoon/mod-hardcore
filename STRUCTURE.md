@@ -6,18 +6,22 @@ mod-hardcore/
 ├── README.md                          # Основная документация
 ├── INSTALL.md                         # Руководство по установке
 ├── CONFIGURATION_EXAMPLES.md          # Примеры конфигураций
-├── CHANGELOG.md                       # История изменений
+├── CHANGELOG.md                       # История изменений (версия 1.1.0)
+├── COMMANDS.md                        # Документация игровых команд
+├── TESTING.md                         # Руководство по тестированию
+├── STRUCTURE.md                       # Этот файл - структура проекта
 ├── LICENSE                            # Лицензия GNU AGPL v3
 ├── CMakeLists.txt                     # Конфигурация сборки
 ├── include.sh                         # Скрипт подключения модуля
 │
 ├── src/                               # Исходный код
-│   ├── Hardcore.h                     # Заголовочный файл (51 строка)
-│   ├── Hardcore.cpp                   # Основная логика (726 строк)
+│   ├── Hardcore.h                     # Заголовочный файл (67 строк)
+│   ├── Hardcore.cpp                   # Основная логика (765 строк)
+│   ├── HardcoreCommandScript.cpp      # Игровые команды (185 строк)
 │   └── Hardcore_loader.cpp            # Загрузчик скриптов (13 строк)
 │
 ├── conf/                              # Конфигурация
-│   ├── hardcore.conf.dist             # Конфиг модуля (130+ строк)
+│   ├── hardcore.conf.dist             # Конфиг модуля (207 строк)
 │   └── conf.sh.dist                   # Shell конфигурация
 │
 └── data/                              # Данные
@@ -36,27 +40,44 @@ mod-hardcore/
 #### `Hardcore.h`
 - **Назначение:** Заголовочный файл модуля
 - **Содержит:**
-  - `enum HardcoreSettings` - настройки персонажа
+  - `enum HardcoreSettings` - настройки персонажа (SETTING_HARDCORE, HARDCORE_DEAD, HARDCORE_LAST_DUNGEON_TIME)
   - `class Hardcore` - singleton класс модуля
-  - Публичные методы и поля конфигурации
-- **Размер:** 51 строка
+  - Публичные методы: `isHardcorePlayer()`, `isHardcoreDead()`, `canEnterDungeon()`
+  - Поля конфигурации (17+ параметров)
+- **Размер:** 67 строк (+16 от версии 1.0.0)
 
 #### `Hardcore.cpp`
 - **Назначение:** Основная логика модуля
 - **Содержит:**
-  - `Hardcore_WorldScript` - загрузка конфигурации
-  - `Hardcore_PlayerScript` - логика игрока (15 хуков)
-  - `Hardcore_AllScript` - взаимодействие с NPC
-  - `Hardcore_GroupScript` - проверка групп
+  - `Hardcore_WorldScript` - загрузка конфигурации (17 параметров)
+  - `Hardcore_PlayerScript` - логика игрока (17 хуков)
+    - `OnLogin` - применение ауры, проверка смерти
+    - `OnMapChanged` - система кулдаунов подземелий
+    - `OnPVPKill` / `OnPlayerKilledByCreature` - обработка смерти
+    - `OnDamageDealt` / `OnTakeDamage` - модификаторы урона
+    - `CanJoinInBattlegroundQueue` / `CanJoinInArenaQueue` - блокировка PvP
+    - `OnBeforeSendMail` / `OnMailReceive` - блокировка почты
+    - И другие хуки...
+  - `Hardcore_AllScript` - взаимодействие с NPC (аукцион, банк)
+  - `Hardcore_GroupScript` - проверка групп (режим + разница уровней)
   - `Hardcore_BattlegroundScript` - поля боя
   - `gobject_hardcore` - GameObject активации
-- **Размер:** 726 строк
-- **Хуки:** OnLogin, OnPVPKill, OnDamageDealt, OnTakeDamage и др.
+- **Размер:** 765 строк (+39 от версии 1.0.0)
+
+#### `HardcoreCommandScript.cpp` ⭐ НОВЫЙ
+- **Назначение:** Игровые команды для игроков
+- **Содержит:**
+  - `class HardcoreCommandScript` - обработчик команд
+  - `.hardcore status` - проверка статуса игрока
+  - `.hardcore info` - информация о режиме
+- **Размер:** 185 строк
+- **Уровень доступа:** SEC_PLAYER (все игроки)
 
 #### `Hardcore_loader.cpp`
 - **Назначение:** Регистрация скриптов
 - **Содержит:**
-  - `AddSC_mod_hardcore()` - функция регистрации
+  - `AddSC_mod_hardcore()` - функция регистрации всех скриптов
+  - `AddSC_HardcoreCommandScript()` - регистрация команд
   - `Addmod_hardcoreScripts()` - точка входа
 - **Размер:** 13 строк
 
